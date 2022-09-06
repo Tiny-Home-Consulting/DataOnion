@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace TinyHomeDataHelper.Config
@@ -6,21 +7,29 @@ namespace TinyHomeDataHelper.Config
     public class TinyHomeDataHelperOptions
     {
         public EFCoreOptions? EFCore { get; set; }
+        public string DatabaseConnectionString { get; }
+
+        public TinyHomeDataHelperOptions(
+            string databaseConnectionString
+        )
+        {
+            DatabaseConnectionString = databaseConnectionString;
+        }
     }
 
     public class EFCoreOptions
     {
-        public Action<IServiceProvider, DbContextOptionsBuilder>? OptionsAction { get; }
-        public ServiceLifetime ServiceLifetime { get; }
-        public ServiceLifetime OptionsLifetime { get; }
+        public Func<string, DbContextOptionsBuilder, DbContextOptionsBuilder> DataConnector;
+        public ServiceLifetime? ServiceLifetime { get; } = null;
+        public ServiceLifetime? OptionsLifetime { get; } = null;
 
         public EFCoreOptions(
-            Action<IServiceProvider, DbContextOptionsBuilder>? optionsAction,
-            ServiceLifetime serviceLifetime = ServiceLifetime.Scoped,
-            ServiceLifetime optionsLifetime = ServiceLifetime.Scoped
+            Func<string, DbContextOptionsBuilder, DbContextOptionsBuilder> dataConnector,
+            ServiceLifetime? serviceLifetime = null,
+            ServiceLifetime? optionsLifetime = null
         )
         {
-            OptionsAction = optionsAction;
+            DataConnector = dataConnector;
             ServiceLifetime = serviceLifetime;
             OptionsLifetime = optionsLifetime;
         }

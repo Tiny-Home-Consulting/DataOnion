@@ -10,12 +10,12 @@ namespace TinyHomeDataHelper
     {
         public static IServiceCollection ConfigureEfCoreDataHelper<TDbContext>(
             this IServiceCollection serviceCollection,
-            TinyHomeDataHelperOptions? options
+            TinyHomeDataHelperOptions? options = null
         )
             where TDbContext : DbContext
         {
             serviceCollection.AddDbContext<TDbContext>(
-                options?.EFCore?.OptionsAction,
+                options?.EFCore?.DataConnector,
                 options?.EFCore?.ServiceLifetime ?? ServiceLifetime.Scoped,
                 options?.EFCore?.OptionsLifetime ?? ServiceLifetime.Scoped
             );
