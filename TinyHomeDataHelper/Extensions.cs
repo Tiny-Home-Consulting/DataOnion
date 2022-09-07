@@ -15,7 +15,7 @@ namespace TinyHomeDataHelper
             where TDbContext : DbContext
         {
             serviceCollection.AddDbContext<TDbContext>(
-                options?.EFCore?.DataConnector,
+                options?.EFCore?.DataConnector?.Invoke(options.DatabaseConnectionString),
                 options?.EFCore?.ServiceLifetime ?? ServiceLifetime.Scoped,
                 options?.EFCore?.OptionsLifetime ?? ServiceLifetime.Scoped
             );

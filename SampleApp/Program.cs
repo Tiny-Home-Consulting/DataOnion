@@ -13,14 +13,14 @@ services.ConfigureDataHelper<ApplicationContext, NpgsqlConnection>(
     new TinyHomeDataHelperOptions(connectionString)
     {
         EFCore = new EFCoreOptions(
-            (connectionStr, opt) => opt.UseNpgsql(connectionStr).UseSnakeCaseNamingConvention(),
+            str => opt => opt.UseNpgsql(str),
             ServiceLifetime.Scoped,
             ServiceLifetime.Scoped
         )
     }
 );
 
-    Func<string, DbContextOptionsBuilder, DbContextOptionsBuilder> test = (str, o) => o.UseNpgsql(str);
+    Func<string, Action<DbContextOptionsBuilder>> test = str => opt => opt.UseNpgsql(str);
 
 
 

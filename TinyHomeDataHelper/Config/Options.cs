@@ -19,12 +19,12 @@ namespace TinyHomeDataHelper.Config
 
     public class EFCoreOptions
     {
-        public Func<string, DbContextOptionsBuilder, DbContextOptionsBuilder> DataConnector;
+        public Func<string, Action<DbContextOptionsBuilder>>? DataConnector = null;
         public ServiceLifetime? ServiceLifetime { get; } = null;
         public ServiceLifetime? OptionsLifetime { get; } = null;
 
         public EFCoreOptions(
-            Func<string, DbContextOptionsBuilder, DbContextOptionsBuilder> dataConnector,
+            Func<string, Action<DbContextOptionsBuilder>>? dataConnector = null,
             ServiceLifetime? serviceLifetime = null,
             ServiceLifetime? optionsLifetime = null
         )
