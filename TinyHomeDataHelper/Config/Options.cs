@@ -1,3 +1,4 @@
+using System.Data.Common;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.DependencyInjection;
@@ -14,6 +15,30 @@ namespace TinyHomeDataHelper.Config
         )
         {
             DatabaseConnectionString = databaseConnectionString;
+        }
+    }
+
+    public class TinyHomeDataHelperOptions<TDbConnection> : TinyHomeDataHelperOptions
+        where TDbConnection : DbConnection
+    {
+        public DapperOptions<TDbConnection>? DapperOptions { get; set; }
+        
+        public TinyHomeDataHelperOptions(string databaseConnectionString) 
+            : base (databaseConnectionString) 
+        {
+        }
+    }
+
+    public class DapperOptions<TDbConnection>
+        where TDbConnection : DbConnection
+    {
+        public Func<string, TDbConnection>? ConnectionGetter { get; } = null;
+
+        public DapperOptions(
+            Func<string, TDbConnection>? connectionGetter = null
+        )
+        {
+            ConnectionGetter = connectionGetter;
         }
     }
 

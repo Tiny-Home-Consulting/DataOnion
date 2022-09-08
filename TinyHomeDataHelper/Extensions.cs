@@ -26,24 +26,39 @@ namespace TinyHomeDataHelper
         }
 
         public static IServiceCollection ConfigureDapperDataHelper<TDbConnection>(
-            this IServiceCollection serviceCollection
+            this IServiceCollection serviceCollection,
+            TinyHomeDataHelperOptions<TDbConnection>? options = null
         )
             where TDbConnection : DbConnection
         {
-            serviceCollection.AddScoped<IDapperService<TDbConnection>, DapperService<TDbConnection>>();
+            if (options == null || String.IsNullOrWhiteSpace(options.DatabaseConnectionString))
+            {
+                serviceCollection.AddScoped<IDapperService<TDbConnection>, DapperService<TDbConnection>>();
+
+                return serviceCollection;
+            }
+
+            serviceCollection.AddScoped<IDapperService<TDbConnection>, DapperService<TDbConnection>>(
+                o => new DapperService<TDbConnection>(
+                    // We need the ! here because the compiler is seemingly dumb.
+                    options!.DapperOptions!.ConnectionGetter!(options!.DatabaseConnectionString)
+                )
+            );
 
             return serviceCollection;
         }
 
         public static IServiceCollection ConfigureDataHelper<TDbContext, TDbConnection>(
             this IServiceCollection serviceCollection,
-            TinyHomeDataHelperOptions? options = null
+            TinyHomeDataHelperOptions<TDbConnection>? options = null
         )
             where TDbContext : DbContext
             where TDbConnection : DbConnection
         {
             serviceCollection.ConfigureEfCoreDataHelper<TDbContext>(options);
-            serviceCollection.ConfigureDapperDataHelper<TDbConnection>();
+            serviceCollection.ConfigureDapperDataHelper<TDbConnection>(
+                options
+            );
 
 
             return serviceCollection;
