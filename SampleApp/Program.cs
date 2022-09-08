@@ -1,24 +1,29 @@
-using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 using SampleApp.db;
 using TinyHomeDataHelper;
-using TinyHomeDataHelper.Config;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
 
 var connectionString = "";
-services.ConfigureDataHelper<ApplicationContext, NpgsqlConnection>(
-    new TinyHomeDataHelperOptions(connectionString)
-    {
-        EFCore = new EFCoreOptions(
-            str => opt => opt.UseNpgsql(str),
-            ServiceLifetime.Scoped,
-            ServiceLifetime.Scoped
-        )
-    }
+
+services.ConfigureDapperDataHelper<NpgsqlConnection>(
+    new(
+        connectionString,
+        str => new NpgsqlConnection(str)
+    )
 );
+
+services.ConfigureEfCoreDataHelper<ApplicationContext>(
+    new(
+        connectionString,
+        str => opt => opt.UseNpgsql(str),
+        ServiceLifetime.Scoped,
+        ServiceLifetime.Scoped
+    )
+);
+
 
     Func<string, Action<DbContextOptionsBuilder>> test = str => opt => opt.UseNpgsql(str);
 

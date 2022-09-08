@@ -10,14 +10,14 @@ namespace TinyHomeDataHelper
     {
         public static IServiceCollection ConfigureEfCoreDataHelper<TDbContext>(
             this IServiceCollection serviceCollection,
-            TinyHomeDataHelperOptions? options = null
+            EFCoreOptions? options = null
         )
             where TDbContext : DbContext
         {
             serviceCollection.AddDbContext<TDbContext>(
-                options?.EFCore?.DataConnector?.Invoke(options.DatabaseConnectionString),
-                options?.EFCore?.ServiceLifetime ?? ServiceLifetime.Scoped,
-                options?.EFCore?.OptionsLifetime ?? ServiceLifetime.Scoped
+                options?.DataConnector?.Invoke(options.ConnectionString),
+                options?.ServiceLifetime ?? ServiceLifetime.Scoped,
+                options?.OptionsLifetime ?? ServiceLifetime.Scoped
             );
 
             serviceCollection.AddScoped<IEFCoreService<TDbContext>, EFCoreService<TDbContext>>();
@@ -27,40 +27,20 @@ namespace TinyHomeDataHelper
 
         public static IServiceCollection ConfigureDapperDataHelper<TDbConnection>(
             this IServiceCollection serviceCollection,
-            TinyHomeDataHelperOptions<TDbConnection>? options = null
+            DapperOptions<TDbConnection>? options = null
         )
             where TDbConnection : DbConnection
         {
-            if (options == null || String.IsNullOrWhiteSpace(options.DatabaseConnectionString))
+            // If no options are passed in, assume the DBConnection has already been registered
+            if (options != null)
             {
-                serviceCollection.AddScoped<IDapperService<TDbConnection>, DapperService<TDbConnection>>();
-
-                return serviceCollection;
+                serviceCollection.AddScoped<TDbConnection>(
+                    services => options.ConnectionGetter(options.ConnectionString)
+                );
             }
 
-            serviceCollection.AddScoped<IDapperService<TDbConnection>, DapperService<TDbConnection>>(
-                o => new DapperService<TDbConnection>(
-                    // We need the ! here because the compiler is seemingly dumb.
-                    options!.DapperOptions!.ConnectionGetter!(options!.DatabaseConnectionString)
-                )
-            );
-
-            return serviceCollection;
-        }
-
-        public static IServiceCollection ConfigureDataHelper<TDbContext, TDbConnection>(
-            this IServiceCollection serviceCollection,
-            TinyHomeDataHelperOptions<TDbConnection>? options = null
-        )
-            where TDbContext : DbContext
-            where TDbConnection : DbConnection
-        {
-            serviceCollection.ConfigureEfCoreDataHelper<TDbContext>(options);
-            serviceCollection.ConfigureDapperDataHelper<TDbConnection>(
-                options
-            );
-
-
+            serviceCollection.AddScoped<IDapperService<TDbConnection>, DapperService<TDbConnection>>();
+            
             return serviceCollection;
         }
     }

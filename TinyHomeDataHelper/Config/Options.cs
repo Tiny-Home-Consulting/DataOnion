@@ -1,59 +1,40 @@
 using System.Data.Common;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace TinyHomeDataHelper.Config
 {
-    public class TinyHomeDataHelperOptions
-    {
-        public EFCoreOptions? EFCore { get; set; }
-        public string DatabaseConnectionString { get; }
-
-        public TinyHomeDataHelperOptions(
-            string databaseConnectionString
-        )
-        {
-            DatabaseConnectionString = databaseConnectionString;
-        }
-    }
-
-    public class TinyHomeDataHelperOptions<TDbConnection> : TinyHomeDataHelperOptions
-        where TDbConnection : DbConnection
-    {
-        public DapperOptions<TDbConnection>? DapperOptions { get; set; }
-        
-        public TinyHomeDataHelperOptions(string databaseConnectionString) 
-            : base (databaseConnectionString) 
-        {
-        }
-    }
-
     public class DapperOptions<TDbConnection>
         where TDbConnection : DbConnection
     {
-        public Func<string, TDbConnection>? ConnectionGetter { get; } = null;
+        public Func<string, TDbConnection> ConnectionGetter { get; }
+        public string ConnectionString { get; }
 
         public DapperOptions(
-            Func<string, TDbConnection>? connectionGetter = null
+            string connectionString,
+            Func<string, TDbConnection> connectionGetter
         )
         {
             ConnectionGetter = connectionGetter;
+            ConnectionString = connectionString;
         }
     }
 
     public class EFCoreOptions
     {
-        public Func<string, Action<DbContextOptionsBuilder>>? DataConnector = null;
+        public string ConnectionString { get; }
+        public Func<string, Action<DbContextOptionsBuilder>> DataConnector;
         public ServiceLifetime? ServiceLifetime { get; } = null;
         public ServiceLifetime? OptionsLifetime { get; } = null;
 
         public EFCoreOptions(
-            Func<string, Action<DbContextOptionsBuilder>>? dataConnector = null,
+            string connectionString,
+            Func<string, Action<DbContextOptionsBuilder>> dataConnector,
             ServiceLifetime? serviceLifetime = null,
             ServiceLifetime? optionsLifetime = null
         )
         {
+            ConnectionString = connectionString;
             DataConnector = dataConnector;
             ServiceLifetime = serviceLifetime;
             OptionsLifetime = optionsLifetime;
