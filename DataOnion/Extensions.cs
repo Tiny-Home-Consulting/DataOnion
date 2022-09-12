@@ -8,7 +8,7 @@ namespace DataOnion
 {
     public static class DataHelperExtensions
     {
-        public static IServiceCollection ConfigureEfCoreDataHelper<TDbContext>(
+        public static IServiceCollection ConfigureEfCoreOnion<TDbContext>(
             this IServiceCollection serviceCollection,
             EFCoreOptions? options = null
         )
@@ -25,7 +25,7 @@ namespace DataOnion
             return serviceCollection;
         }
 
-        public static IServiceCollection ConfigureDapperDataHelper<TDbConnection>(
+        public static IServiceCollection ConfigureDapperOnion<TDbConnection>(
             this IServiceCollection serviceCollection,
             DapperOptions<TDbConnection>? options = null
         )

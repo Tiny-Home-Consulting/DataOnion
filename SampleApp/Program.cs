@@ -8,14 +8,14 @@ var services = builder.Services;
 
 var connectionString = "";
 
-services.ConfigureDapperDataHelper<NpgsqlConnection>(
+services.ConfigureDapperOnion<NpgsqlConnection>(
     new(
         connectionString,
         str => new NpgsqlConnection(str)
     )
 );
 
-services.ConfigureEfCoreDataHelper<ApplicationContext>(
+services.ConfigureEfCoreOnion<ApplicationContext>(
     new(
         connectionString,
         str => opt => opt.UseNpgsql(str),

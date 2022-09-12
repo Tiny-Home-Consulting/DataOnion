@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
-    <PackageId>tiny-home-data-helper</PackageId>
+    <PackageId>data-onion</PackageId>
     <Version>0.0.1</Version>
     <Authors>Kyle Lawhorn</Authors>
     <Company>Tiny Home Consulting, LLC.</Company>
