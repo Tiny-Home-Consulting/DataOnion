@@ -1,6 +1,6 @@
 using System.Linq.Expressions;
 
-namespace TinyHomeDataHelper.db
+namespace DataOnion.db
 {
     public interface IEntity<TIndex>
     {

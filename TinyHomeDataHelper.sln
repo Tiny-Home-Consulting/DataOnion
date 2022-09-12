@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.30114.105
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TinyHomeDataHelper", "TinyHomeDataHelper\TinyHomeDataHelper.csproj", "{0A1038D7-0C19-43EE-9BEB-D79F39752028}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SampleApp", "SampleApp\SampleApp.csproj", "{5FBCE288-7FC7-4847-B8E3-1C41C6E662E2}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataOnion", "DataOnion\DataOnion.csproj", "{A032FA53-309C-4002-BF2F-A92538EF04B8}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -16,13 +16,13 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{0A1038D7-0C19-43EE-9BEB-D79F39752028}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{0A1038D7-0C19-43EE-9BEB-D79F39752028}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{0A1038D7-0C19-43EE-9BEB-D79F39752028}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{0A1038D7-0C19-43EE-9BEB-D79F39752028}.Release|Any CPU.Build.0 = Release|Any CPU
 		{5FBCE288-7FC7-4847-B8E3-1C41C6E662E2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{5FBCE288-7FC7-4847-B8E3-1C41C6E662E2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5FBCE288-7FC7-4847-B8E3-1C41C6E662E2}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5FBCE288-7FC7-4847-B8E3-1C41C6E662E2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A032FA53-309C-4002-BF2F-A92538EF04B8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A032FA53-309C-4002-BF2F-A92538EF04B8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A032FA53-309C-4002-BF2F-A92538EF04B8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A032FA53-309C-4002-BF2F-A92538EF04B8}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

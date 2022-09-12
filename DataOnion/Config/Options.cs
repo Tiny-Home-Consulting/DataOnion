@@ -2,7 +2,7 @@ using System.Data.Common;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace TinyHomeDataHelper.Config
+namespace DataOnion.Config
 {
     public class DapperOptions<TDbConnection>
         where TDbConnection : DbConnection

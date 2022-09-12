@@ -1,10 +1,10 @@
 using System.Data.Common;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using TinyHomeDataHelper.Config;
-using TinyHomeDataHelper.db;
+using DataOnion.Config;
+using DataOnion.db;
 
-namespace TinyHomeDataHelper
+namespace DataOnion
 {
     public static class DataHelperExtensions
     {

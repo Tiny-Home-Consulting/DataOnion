@@ -1,7 +1,7 @@
 using System.Data.Common;
 using Dapper;
 
-namespace TinyHomeDataHelper.db
+namespace DataOnion.db
 {
     public class DapperService<TDbConnection> : IDapperService<TDbConnection>
         where TDbConnection : DbConnection

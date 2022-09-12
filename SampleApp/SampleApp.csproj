@@ -16,7 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\TinyHomeDataHelper\TinyHomeDataHelper.csproj" />
+    <ProjectReference Include="..\DataOnion\DataOnion.csproj" />
   </ItemGroup>
 
 </Project>

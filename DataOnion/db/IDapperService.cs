@@ -1,6 +1,6 @@
 using System.Data.Common;
 
-namespace TinyHomeDataHelper.db
+namespace DataOnion.db
 {
     public interface IDapperService<TDbConnection>
         where TDbConnection : DbConnection

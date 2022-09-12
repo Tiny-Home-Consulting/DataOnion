@@ -1,7 +1,7 @@
 using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 
-namespace TinyHomeDataHelper.db
+namespace DataOnion.db
 {
     public class EFCoreService<TDbContext> : IEFCoreService<TDbContext> 
         where TDbContext : DbContext
