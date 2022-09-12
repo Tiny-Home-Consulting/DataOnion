@@ -1,7 +1,7 @@
+using DataOnion;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 using SampleApp.db;
-using DataOnion;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
