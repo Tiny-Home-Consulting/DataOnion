@@ -1,11 +1,18 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
-    <PackageId>tiny-home-data-helper</PackageId>
+    <Title>Data Onion</Title>
+    <Description>A collection of useful wrappers around Dapper, Entity Framework and other packages to accelerate early project development.</Description>
+    <PackageId>DataOnion</PackageId>
     <Version>0.0.1</Version>
     <Authors>Kyle Lawhorn</Authors>
     <Company>Tiny Home Consulting, LLC.</Company>
+    <Copyright>Copyright (c) 2022 Tiny Home Consulting, LLC.</Copyright>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <RepositoryUrl>https://github.com/Tiny-Home-Consulting/DataOnion.git</RepositoryUrl>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
