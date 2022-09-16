@@ -5,17 +5,7 @@ using DataOnion.db;
 
 namespace DataOnion
 {
-    public interface IFluentDatabaseOnion
-    {
-        IFluentDapperSetup ConfigureDapper<T>(
-            Func<string, T> connectionGetter
-        ) where T : DbConnection;
-        IFluentEfCoreSetup ConfigureEfCore<T>(
-            Func<string, Action<DbContextOptionsBuilder>>? dataConnector,
-            ServiceLifetime contextLifetime = ServiceLifetime.Scoped,
-            ServiceLifetime optionsLifetime = ServiceLifetime.Scoped
-        ) where T : DbContext;
-    }
+    public interface IFluentDatabaseOnion : IFluentDapperSetup, IFluentEfCoreSetup {}
 
     public interface IFluentDapperSetup
     {
@@ -33,7 +23,7 @@ namespace DataOnion
         ) where T : DbConnection;
     }
 
-    public class FluentDatabaseOnion : IFluentDatabaseOnion, IFluentDapperSetup, IFluentEfCoreSetup
+    public class FluentDatabaseOnion : IFluentDatabaseOnion
     {
         private readonly IServiceCollection _serviceCollection;
         private readonly string _connectionString;
