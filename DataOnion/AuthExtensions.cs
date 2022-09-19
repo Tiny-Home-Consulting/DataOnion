@@ -15,54 +15,74 @@ namespace DataOnion
 
     public interface IFluentAuthOnion
     {
-        IFluentAuthOnion ConfigureSlidingExpiration(
-            TimeSpan expiration
-        );
+        IFluentAuthOnion ConfigureSlidingExpiration<T>(
+            TimeSpan expiration,
+            Func<T, string> getId,
+            Func<T, T, bool> isSameSession,
+            Func<T, IEnumerable<HashEntry>> toHash,
+            Func<HashEntry[], T> makeFromHash
+        )
+            where T : class;
+
+        IFluentAuthOnion ConfigureRedis(string connectionString);
     }
 
     public class FluentAuthOnion : IFluentAuthOnion
     {
         private readonly IServiceCollection _serviceCollection;
-        private readonly string _connectionString;
         private ConnectionMultiplexer? _existingConnection = null;
 
-        private ConnectionMultiplexer _connection
+        public FluentAuthOnion(
+            IServiceCollection serviceCollection
+        )
         {
-            get
-            {
+            _serviceCollection = serviceCollection;
+
+            _serviceCollection.AddScoped(typeof(IAuthService<>), typeof(AuthService<>));
+        }
+
+        public IFluentAuthOnion ConfigureRedis(string connectionString)
+        {
+            // The `_existingConnection` object is a singleton, in a sense, since it's a stored property here.
+            // I don't know how much it matters which service lifetime is chosen.
+            _serviceCollection.AddTransient<IDatabase>(_ => {
                 try
                 {
                     if (_existingConnection == null || !_existingConnection.IsConnected)
                     {
-                        _existingConnection = ConnectionMultiplexer.Connect(_connectionString);
+                        _existingConnection = ConnectionMultiplexer.Connect(connectionString);
                     }
 
-                    return _existingConnection;
+                    return _existingConnection.GetDatabase();
                 }
                 catch (RedisException e)
                 {
                     throw new RedisConnectionFailedException(e.Message);
                 }
-            }
-        }
-        private IDatabase _database => _connection.GetDatabase();
+            });
 
-        public FluentAuthOnion(
-            IServiceCollection serviceCollection,
-            string connectionString
-        )
-        {
-            _serviceCollection = serviceCollection;
-            _connectionString = connectionString;
-
-            _serviceCollection.AddSingleton<IDatabase>(_database);
+            return this;
         }
 
-        public IFluentAuthOnion ConfigureSlidingExpiration(
-            TimeSpan expiration
+        public IFluentAuthOnion ConfigureSlidingExpiration<T>(
+            TimeSpan expiration,
+            Func<T, string> getId,
+            Func<T, T, bool> isSameSession,
+            Func<T, IEnumerable<HashEntry>> toHash,
+            Func<HashEntry[], T> makeFromHash
         )
+            where T : class
         {
-            
+            _serviceCollection.AddScoped<IAuthServiceStrategy<T>>(provider =>
+                new SlidingExpirationStrategy<T>(
+                    provider.GetRequiredService<IDatabase>(),
+                    expiration,
+                    getId,
+                    isSameSession,
+                    toHash,
+                    makeFromHash
+                )
+            );
 
             return this;
         }
@@ -71,13 +91,11 @@ namespace DataOnion
     public static class AuthHelperExtensions
     {
         public static IFluentAuthOnion AddAuthOnion(
-            this IServiceCollection serviceCollection,
-            string connectionString
+            this IServiceCollection serviceCollection
         )
         {
             return new FluentAuthOnion(
-                serviceCollection,
-                connectionString
+                serviceCollection
             );
         }
     }

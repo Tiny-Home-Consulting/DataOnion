@@ -1,6 +1,6 @@
 namespace DataOnion.Auth
 {
-    public interface IAuthService<T>
+    internal interface IAuthServiceStrategy<T>
     {
         Task<bool> LoginAsync(T details);
         Task<T?> CheckSessionAsync(string id);
