@@ -41,8 +41,8 @@ namespace DataOnion
             Func<string, T> connectionGetter
         ) where T: DbConnection
         {
-            _serviceCollection.AddScoped<T>(
-                services => connectionGetter(_connectionString)
+            _serviceCollection.AddScoped<IDapperService<T>>(
+                _ => new DapperService<T>(connectionGetter(_connectionString))
             );
 
             return this;
