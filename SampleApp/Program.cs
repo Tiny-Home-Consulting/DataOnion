@@ -6,13 +6,15 @@ using SampleApp.db;
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
 
-var connectionString = "";
+var dbConnectionString = "";
+var redisConnectionString = "";
 
-services.AddDatabaseOnion(connectionString)
+services.AddDatabaseOnion(dbConnectionString)
     .ConfigureDapper<NpgsqlConnection>(str => new NpgsqlConnection(str))
     .ConfigureEfCore<ApplicationContext>(str => opt => opt.UseNpgsql(str));
 
-
+services.AddAuthOnion(redisConnectionString)
+    .ConfigureSlidingExpiration(TimeSpan.FromMinutes(30));
 
 
 
