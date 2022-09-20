@@ -8,31 +8,9 @@ var services = builder.Services;
 
 var connectionString = "";
 
-services.ConfigureDapperOnion<NpgsqlConnection>(
-    new(
-        connectionString,
-        str => new NpgsqlConnection(str)
-    )
-);
-
-services.ConfigureEfCoreOnion<ApplicationContext>(
-    new(
-        connectionString,
-        str => opt => opt.UseNpgsql(str),
-        ServiceLifetime.Scoped,
-        ServiceLifetime.Scoped
-    )
-);
-
-
-    Func<string, Action<DbContextOptionsBuilder>> test = str => opt => opt.UseNpgsql(str);
-
-
-
-
-
-
-
+services.AddDatabaseOnion(connectionString)
+    .ConfigureDapper<NpgsqlConnection>(str => new NpgsqlConnection(str))
+    .ConfigureEfCore<ApplicationContext>(str => opt => opt.UseNpgsql(str));
 
 
 

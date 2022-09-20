@@ -1,47 +1,85 @@
 using System.Data.Common;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using DataOnion.Config;
 using DataOnion.db;
 
 namespace DataOnion
 {
-    public static class DataHelperExtensions
+    public interface IFluentDatabaseOnion : IFluentDapperSetup, IFluentEfCoreSetup {}
+
+    public interface IFluentDapperSetup
     {
-        public static IServiceCollection ConfigureEfCoreOnion<TDbContext>(
-            this IServiceCollection serviceCollection,
-            EFCoreOptions? options = null
+        IFluentEfCoreSetup ConfigureEfCore<T>(
+            Func<string, Action<DbContextOptionsBuilder>>? dataConnector,
+            ServiceLifetime contextLifetime = ServiceLifetime.Scoped,
+            ServiceLifetime optionsLifetime = ServiceLifetime.Scoped
+        ) where T : DbContext;
+    }
+
+    public interface IFluentEfCoreSetup
+    {
+        IFluentDapperSetup ConfigureDapper<T>(
+            Func<string, T> connectionGetter
+        ) where T : DbConnection;
+    }
+
+    public class FluentDatabaseOnion : IFluentDatabaseOnion
+    {
+        private readonly IServiceCollection _serviceCollection;
+        private readonly string _connectionString;
+
+        public FluentDatabaseOnion(
+            IServiceCollection serviceCollection,
+            string connectionString
         )
-            where TDbContext : DbContext
         {
-            serviceCollection.AddDbContext<TDbContext>(
-                options?.DataConnector?.Invoke(options.ConnectionString),
-                options?.ServiceLifetime ?? ServiceLifetime.Scoped,
-                options?.OptionsLifetime ?? ServiceLifetime.Scoped
-            );
-
-            serviceCollection.AddScoped<IEFCoreService<TDbContext>, EFCoreService<TDbContext>>();
-
-            return serviceCollection;
+            _serviceCollection = serviceCollection;
+            _connectionString = connectionString;
         }
 
-        public static IServiceCollection ConfigureDapperOnion<TDbConnection>(
-            this IServiceCollection serviceCollection,
-            DapperOptions<TDbConnection>? options = null
-        )
-            where TDbConnection : DbConnection
+        public IFluentDapperSetup ConfigureDapper<T>(
+            Func<string, T> connectionGetter
+        ) where T: DbConnection
         {
-            // If no options are passed in, assume the DBConnection has already been registered
-            if (options != null)
-            {
-                serviceCollection.AddScoped<TDbConnection>(
-                    services => options.ConnectionGetter(options.ConnectionString)
-                );
-            }
+            _serviceCollection.AddScoped<IDapperService<T>>(
+                _ => new DapperService<T>(connectionGetter(_connectionString))
+            );
 
-            serviceCollection.AddScoped<IDapperService<TDbConnection>, DapperService<TDbConnection>>();
-            
-            return serviceCollection;
+            return this;
+        }
+
+        public IFluentEfCoreSetup ConfigureEfCore<T>(
+            Func<string, Action<DbContextOptionsBuilder>>? dataConnector,
+            ServiceLifetime contextLifetime = ServiceLifetime.Scoped,
+            ServiceLifetime optionsLifetime = ServiceLifetime.Scoped
+        ) where T : DbContext
+        {
+            _serviceCollection.AddDbContext<T>(
+                dataConnector?.Invoke(_connectionString),
+                contextLifetime,
+                optionsLifetime
+            );
+
+            _serviceCollection.AddScoped<IEFCoreService<T>, EFCoreService<T>>();
+
+            return this;
+        }
+    }
+
+    public static class DataHelperExtensions
+    {
+        public static IFluentDatabaseOnion? DatabaseOnion;
+        public static IFluentDatabaseOnion AddDatabaseOnion(
+            this IServiceCollection serviceCollection,
+            string connectionString
+        )
+        {
+            DatabaseOnion = new FluentDatabaseOnion(
+                serviceCollection,
+                connectionString
+            );
+
+            return DatabaseOnion;
         }
     }
 }
