@@ -3,15 +3,12 @@ using StackExchange.Redis;
 namespace DataOnion.Auth
 {
     public class SlidingExpirationStrategy<T> : IAuthServiceStrategy<T>
-        where T : class
+        where T : class, IAuthStorable<T>
     {
         public static string ExpiryKey { get; } = "expiration";
 
         private readonly IDatabase _database;
         private readonly TimeSpan _timeout;
-        private readonly Func<T, string> _getId;
-        private readonly Func<T, T, bool> _isSameSession;
-        private readonly Func<T, IEnumerable<HashEntry>> _toHash;
         private readonly Func<HashEntry[], T> _makeFromHash;
 
         private string _expirationTimeStr => DateTimeOffset.UtcNow
@@ -22,17 +19,11 @@ namespace DataOnion.Auth
         public SlidingExpirationStrategy(
             IDatabase database,
             TimeSpan timeout,
-            Func<T, string> getId,
-            Func<T, T, bool> isSameSession,
-            Func<T, IEnumerable<HashEntry>> toHash,
             Func<HashEntry[], T> makeFromHash
         )
         {
             _database = database;
             _timeout = timeout;
-            _getId = getId;
-            _isSameSession = isSameSession;
-            _toHash = toHash;
             _makeFromHash = makeFromHash;
         }
 
@@ -47,14 +38,15 @@ namespace DataOnion.Auth
 
         public async Task<bool> LoginAsync(T details)
         {
-            var id = new RedisKey(_getId(details));
+            var id = new RedisKey(details.GetId());
             var redisHash = await _database.HashGetAllAsync(id);
 
             if (redisHash.Length == 0)
             {
                 await _database.HashSetAsync(
                     id,
-                    _toHash(details)
+                    details
+                        .ToRedisHash()
                         .Append(new HashEntry(ExpiryKey, _expirationTimeStr))
                         .ToArray()
                 );
@@ -63,7 +55,7 @@ namespace DataOnion.Auth
             else
             {
                 var session = _makeFromHash(redisHash);
-                if (_isSameSession(session, details))
+                if (details.IsSameSessionAs(session))
                 {
                     await SetExpirationAsync(id);
                     return true;

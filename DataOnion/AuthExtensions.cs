@@ -17,12 +17,9 @@ namespace DataOnion
     {
         IFluentAuthOnion ConfigureSlidingExpiration<T>(
             TimeSpan expiration,
-            Func<T, string> getId,
-            Func<T, T, bool> isSameSession,
-            Func<T, IEnumerable<HashEntry>> toHash,
             Func<HashEntry[], T> makeFromHash
         )
-            where T : class;
+            where T : class, IAuthStorable<T>;
 
         IFluentAuthOnion ConfigureRedis(string connectionString);
     }
@@ -66,20 +63,14 @@ namespace DataOnion
 
         public IFluentAuthOnion ConfigureSlidingExpiration<T>(
             TimeSpan expiration,
-            Func<T, string> getId,
-            Func<T, T, bool> isSameSession,
-            Func<T, IEnumerable<HashEntry>> toHash,
             Func<HashEntry[], T> makeFromHash
         )
-            where T : class
+            where T : class, IAuthStorable<T>
         {
             _serviceCollection.AddScoped<IAuthServiceStrategy<T>>(provider =>
                 new SlidingExpirationStrategy<T>(
                     provider.GetRequiredService<IDatabase>(),
                     expiration,
-                    getId,
-                    isSameSession,
-                    toHash,
                     makeFromHash
                 )
             );

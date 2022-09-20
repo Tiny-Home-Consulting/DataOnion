@@ -19,23 +19,7 @@ services.AddAuthOnion()
     .ConfigureRedis(redisConnectionString)
     .ConfigureSlidingExpiration<LoginData>(
         TimeSpan.FromMinutes(30),
-        x => x.SessionId.ToString(),
-        (x, y) => x.SessionId == y.SessionId,
-        x => new[]
-        {
-            new HashEntry("username", x.Username),
-            new HashEntry("password", x.Password),
-            new HashEntry("session-id", x.SessionId.ToString())
-        },
-        hash => {
-            var dict = hash.ToStringDictionary();
-            return new LoginData
-            {
-                Username = dict["username"],
-                Password = dict["password"],
-                SessionId = Guid.Parse(dict["session-id"])
-            };
-        }
+        hash => new LoginData(hash)
     );
 
 
