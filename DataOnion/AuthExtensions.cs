@@ -17,6 +17,7 @@ namespace DataOnion
     {
         IFluentAuthOnion ConfigureSlidingExpiration<T>(
             TimeSpan expiration,
+            TimeSpan? absoluteExpiration,
             Func<HashEntry[], T> makeFromHash
         )
             where T : class, IAuthStorable<T>;
@@ -62,7 +63,8 @@ namespace DataOnion
         }
 
         public IFluentAuthOnion ConfigureSlidingExpiration<T>(
-            TimeSpan expiration,
+            TimeSpan slidingExpiration,
+            TimeSpan? absoluteExpiration,
             Func<HashEntry[], T> makeFromHash
         )
             where T : class, IAuthStorable<T>
@@ -70,7 +72,8 @@ namespace DataOnion
             _serviceCollection.AddScoped<IAuthServiceStrategy<T>>(provider =>
                 new SlidingExpirationStrategy<T>(
                     provider.GetRequiredService<IDatabase>(),
-                    expiration,
+                    slidingExpiration,
+                    absoluteExpiration,
                     makeFromHash
                 )
             );

@@ -19,6 +19,7 @@ services.AddAuthOnion()
     .ConfigureRedis(redisConnectionString)
     .ConfigureSlidingExpiration<LoginData>(
         TimeSpan.FromMinutes(30),
+        TimeSpan.FromHours(12),
         hash => new LoginData(hash)
     );
 

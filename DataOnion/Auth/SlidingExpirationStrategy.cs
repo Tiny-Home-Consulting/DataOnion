@@ -9,6 +9,7 @@ namespace DataOnion.Auth
 
         private readonly IDatabase _database;
         private readonly TimeSpan _timeout;
+        private readonly TimeSpan? _absoluteExpiration;
         private readonly Func<HashEntry[], T> _makeFromHash;
 
         private string _expirationTimeStr => DateTimeOffset.UtcNow
@@ -19,11 +20,13 @@ namespace DataOnion.Auth
         public SlidingExpirationStrategy(
             IDatabase database,
             TimeSpan timeout,
+            TimeSpan? absoluteExpiration,
             Func<HashEntry[], T> makeFromHash
         )
         {
             _database = database;
             _timeout = timeout;
+            _absoluteExpiration = absoluteExpiration;
             _makeFromHash = makeFromHash;
         }
 
@@ -50,6 +53,7 @@ namespace DataOnion.Auth
                         .Append(new HashEntry(ExpiryKey, _expirationTimeStr))
                         .ToArray()
                 );
+                await _database.KeyExpireAsync(id, _absoluteExpiration);
                 return true;
             }
             else
@@ -95,11 +99,6 @@ namespace DataOnion.Auth
         public async Task LogoutAsync(string id)
         {
             await _database.KeyDeleteAsync(id);
-        }
-
-        public async Task<bool> SetAbsoluteExpirationAsync(string id, TimeSpan expiration)
-        {
-            return await _database.KeyExpireAsync(id, expiration);
         }
     }
 }
