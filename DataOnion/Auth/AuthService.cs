@@ -2,7 +2,7 @@ namespace DataOnion.Auth
 {
     public interface IAuthService<T>
     {
-        Task<bool> LoginAsync(T details);
+        Task<bool> LoginAsync(T userSession);
         Task<T?> CheckSessionAsync(string id);
         Task LogoutAsync(string id);
         Task<bool> SetAbsoluteExpirationAsync(string id, TimeSpan expiration);
@@ -19,9 +19,9 @@ namespace DataOnion.Auth
             _strategy = strategy;
         }
 
-        public async Task<bool> LoginAsync(T details)
+        public async Task<bool> LoginAsync(T userSession)
         {
-            return await _strategy.LoginAsync(details);
+            return await _strategy.LoginAsync(userSession);
         }
 
         public async Task<T?> CheckSessionAsync(string id)

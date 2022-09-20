@@ -36,16 +36,16 @@ namespace DataOnion.Auth
             );
         }
 
-        public async Task<bool> LoginAsync(T details)
+        public async Task<bool> LoginAsync(T userSession)
         {
-            var id = new RedisKey(details.GetId());
+            var id = new RedisKey(userSession.GetId());
             var redisHash = await _database.HashGetAllAsync(id);
 
             if (redisHash.Length == 0)
             {
                 await _database.HashSetAsync(
                     id,
-                    details
+                    userSession
                         .ToRedisHash()
                         .Append(new HashEntry(ExpiryKey, _expirationTimeStr))
                         .ToArray()
@@ -55,7 +55,7 @@ namespace DataOnion.Auth
             else
             {
                 var session = _makeFromHash(redisHash);
-                if (details.IsSameSessionAs(session))
+                if (userSession.IsSameSessionAs(session))
                 {
                     await SetExpirationAsync(id);
                     return true;
