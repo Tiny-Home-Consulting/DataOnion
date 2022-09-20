@@ -35,8 +35,6 @@ namespace DataOnion
         )
         {
             _serviceCollection = serviceCollection;
-
-            _serviceCollection.AddScoped(typeof(IAuthService<>), typeof(AuthService<>));
         }
 
         public IFluentAuthOnion ConfigureRedis(string connectionString)
@@ -76,6 +74,10 @@ namespace DataOnion
                     absoluteExpiration,
                     makeFromHash
                 )
+            );
+
+            _serviceCollection.AddScoped<IAuthService<T>>(provider =>
+                new AuthService<T>(provider.GetRequiredService<IAuthServiceStrategy<T>>())
             );
 
             return this;
