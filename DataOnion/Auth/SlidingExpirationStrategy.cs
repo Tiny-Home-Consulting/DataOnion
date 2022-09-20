@@ -55,7 +55,7 @@ namespace DataOnion.Auth
             else
             {
                 var session = _makeFromHash(redisHash);
-                if (userSession.IsSameSessionAs(session))
+                if (userSession.Equals(session))
                 {
                     await SetExpirationAsync(id);
                     return true;

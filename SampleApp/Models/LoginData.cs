@@ -32,7 +32,7 @@ namespace SampleApp.Models
         }
 
         public string GetId() => SessionId.ToString();
-        public bool IsSameSessionAs(LoginData other) => (SessionId == other.SessionId);
+
         public IEnumerable<HashEntry> ToRedisHash()
         {
             return new[]
@@ -41,6 +41,33 @@ namespace SampleApp.Models
                 new HashEntry("password", Password),
                 new HashEntry("session-id", SessionId.ToString())
             };
+        }
+
+        public bool Equals(LoginData? other) => (SessionId == other?.SessionId);
+
+        // These are not strictly required, but recommended by the documentation for IEquatable
+        public override bool Equals(object? obj)
+        {
+            if (obj != null && obj is LoginData)
+            {
+                return SessionId == ((LoginData)obj).SessionId;
+            }
+            return false;
+        }
+
+        public override int GetHashCode()
+        {
+            return SessionId.GetHashCode();
+        }
+
+        public static bool operator==(LoginData? lhs, LoginData? rhs)
+        {
+            return lhs?.Equals(rhs) ?? false;
+        }
+
+        public static bool operator!=(LoginData? lhs, LoginData? rhs)
+        {
+            return !(lhs == rhs);
         }
     }
 }

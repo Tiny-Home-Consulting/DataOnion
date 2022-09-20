@@ -2,10 +2,9 @@ using StackExchange.Redis;
 
 namespace DataOnion.Auth
 {
-    public interface IAuthStorable<T>
+    public interface IAuthStorable<T> : IEquatable<T>
     {
         string GetId();
-        bool IsSameSessionAs(T other);
         IEnumerable<HashEntry> ToRedisHash();
     }
 }
