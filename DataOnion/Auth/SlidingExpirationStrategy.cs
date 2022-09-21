@@ -10,6 +10,7 @@ namespace DataOnion.Auth
         private readonly IDatabase _database;
         private readonly TimeSpan _timeout;
         private readonly TimeSpan? _absoluteExpiration;
+        private readonly string _keyPrefix;
         private readonly Func<HashEntry[], T> _makeFromHash;
 
         private string _expirationTimeStr => DateTimeOffset.UtcNow
@@ -21,12 +22,14 @@ namespace DataOnion.Auth
             IDatabase database,
             TimeSpan timeout,
             TimeSpan? absoluteExpiration,
+            string keyPrefix,
             Func<HashEntry[], T> makeFromHash
         )
         {
             _database = database;
             _timeout = timeout;
             _absoluteExpiration = absoluteExpiration;
+            _keyPrefix = keyPrefix;
             _makeFromHash = makeFromHash;
         }
 
@@ -39,9 +42,9 @@ namespace DataOnion.Auth
             );
         }
 
-        public async Task<bool> LoginAsync(T userSession)
+        public async Task<T?> LoginAsync(T userSession)
         {
-            var id = new RedisKey(userSession.GetId());
+            var id = new RedisKey(_keyPrefix + userSession.GetId());
             var redisHash = await _database.HashGetAllAsync(id);
 
             if (redisHash.Length == 0)
@@ -54,7 +57,7 @@ namespace DataOnion.Auth
                         .ToArray()
                 );
                 await _database.KeyExpireAsync(id, _absoluteExpiration);
-                return true;
+                return userSession;
             }
             else
             {
@@ -62,15 +65,15 @@ namespace DataOnion.Auth
                 if (userSession.Equals(session))
                 {
                     await SetExpirationAsync(id);
-                    return true;
+                    return session;
                 }
-                return false;
+                return null;
             }
         }
 
-        public async Task<T?> CheckSessionAsync(string id)
+        public async Task<T?> GetSessionAsync(string id)
         {
-            var redisKey = new RedisKey(id);
+            var redisKey = new RedisKey(_keyPrefix + id);
             var expirationRedisValue = await _database.HashGetAsync(
                 redisKey,
                 ExpiryKey
@@ -98,7 +101,8 @@ namespace DataOnion.Auth
 
         public async Task LogoutAsync(string id)
         {
-            await _database.KeyDeleteAsync(id);
+            var key = new RedisKey(_keyPrefix + id);
+            await _database.KeyDeleteAsync(key);
         }
     }
 }

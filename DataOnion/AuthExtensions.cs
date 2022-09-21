@@ -18,6 +18,7 @@ namespace DataOnion
         IFluentAuthOnion ConfigureSlidingExpiration<T>(
             TimeSpan expiration,
             TimeSpan? absoluteExpiration,
+            string authPrefix,
             Func<HashEntry[], T> makeFromHash
         )
             where T : class, IAuthStorable<T>;
@@ -28,13 +29,16 @@ namespace DataOnion
     public class FluentAuthOnion : IFluentAuthOnion
     {
         private readonly IServiceCollection _serviceCollection;
+        private readonly string _environmentPrefix;
         private ConnectionMultiplexer? _existingConnection = null;
 
         public FluentAuthOnion(
-            IServiceCollection serviceCollection
+            IServiceCollection serviceCollection,
+            string environmentPrefix
         )
         {
             _serviceCollection = serviceCollection;
+            _environmentPrefix = environmentPrefix;
         }
 
         public IFluentAuthOnion ConfigureRedis(string connectionString)
@@ -63,6 +67,7 @@ namespace DataOnion
         public IFluentAuthOnion ConfigureSlidingExpiration<T>(
             TimeSpan slidingExpiration,
             TimeSpan? absoluteExpiration,
+            string authPrefix,
             Func<HashEntry[], T> makeFromHash
         )
             where T : class, IAuthStorable<T>
@@ -72,6 +77,7 @@ namespace DataOnion
                     provider.GetRequiredService<IDatabase>(),
                     slidingExpiration,
                     absoluteExpiration,
+                    $"{_environmentPrefix}_{authPrefix}_",
                     makeFromHash
                 )
             );
@@ -87,11 +93,13 @@ namespace DataOnion
     public static class AuthHelperExtensions
     {
         public static IFluentAuthOnion AddAuthOnion(
-            this IServiceCollection serviceCollection
+            this IServiceCollection serviceCollection,
+            string environmentPrefix
         )
         {
             return new FluentAuthOnion(
-                serviceCollection
+                serviceCollection,
+                environmentPrefix
             );
         }
     }

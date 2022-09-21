@@ -10,16 +10,19 @@ var services = builder.Services;
 
 var dbConnectionString = "";
 var redisConnectionString = "";
+var environment = "DEV";
+var authPrefix = "usersession";
 
 services.AddDatabaseOnion(dbConnectionString)
     .ConfigureDapper<NpgsqlConnection>(str => new NpgsqlConnection(str))
     .ConfigureEfCore<ApplicationContext>(str => opt => opt.UseNpgsql(str));
 
-services.AddAuthOnion()
+services.AddAuthOnion(environment)
     .ConfigureRedis(redisConnectionString)
     .ConfigureSlidingExpiration<LoginData>(
         TimeSpan.FromMinutes(30),
         TimeSpan.FromHours(12),
+        authPrefix,
         hash => new LoginData(hash)
     );
 
