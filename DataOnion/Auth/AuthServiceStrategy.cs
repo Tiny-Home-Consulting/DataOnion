@@ -31,7 +31,7 @@ namespace DataOnion.Auth
     {
         private readonly IRedisManager _redisManager;
         private readonly SlidingExpirationConfig<T> _config;
-        private readonly ILogger? _logger; // currently unused
+        private readonly ILogger? _logger;
 
         private IDatabase _database => _redisManager.GetDatabase();
         private string _expirationTimeStr => DateTimeOffset.UtcNow
@@ -53,6 +53,10 @@ namespace DataOnion.Auth
 
         private async Task SetExpirationAsync(RedisKey key)
         {
+            _logger?.LogDebug(
+                "Bumping expiration for key '{0}'",
+                key
+            );
             await _database.HashSetAsync(
                 key,
                 _config.ExpirationKey,
@@ -65,7 +69,12 @@ namespace DataOnion.Auth
         public async Task<T?> LoginAsync(T userSession)
         {
             var id = BuildKey(userSession.GetId());
+            _logger?.LogDebug(
+                "Fetching Redis item '{0}' as hash",
+                id
+            );
             var redisHash = await _database.HashGetAllAsync(id);
+            // If the value stored was not a hash, that will throw a RedisServerException
 
             if (redisHash.Length == 0)
             {
@@ -84,7 +93,18 @@ namespace DataOnion.Auth
                 var session = _config.ConstructFromHash(redisHash);
                 if (userSession.Equals(session))
                 {
-                    await SetExpirationAsync(id);
+                    try
+                    {
+                        await SetExpirationAsync(id);
+                    }
+                    catch (RedisException e)
+                    {
+                        _logger?.LogError(
+                            e,
+                            "Unexpected Redis error, see exception message for details"
+                        );
+                        throw;
+                    }
                     return session;
                 }
                 return null;
@@ -94,6 +114,10 @@ namespace DataOnion.Auth
         public async Task<T?> GetSessionAsync(string id)
         {
             var redisKey = BuildKey(id);
+            _logger?.LogDebug(
+                "Fetching Redis item '{0}' as hash",
+                redisKey
+            );
             var expirationRedisValue = await _database.HashGetAsync(
                 redisKey,
                 _config.ExpirationKey
@@ -101,11 +125,19 @@ namespace DataOnion.Auth
 
             if (expirationRedisValue.IsNull)
             {
+                _logger?.LogDebug(
+                    "Redis item '{0}' does not exist or has no expiration",
+                    redisKey
+                );
                 return null;
             }
 
             if (expirationRedisValue.TryParse(out long expirationSeconds))
             {
+                _logger?.LogDebug(
+                    "Converting {0} from Unix seconds to DateTimeOffset",
+                    expirationSeconds
+                );
                 var expirationTime = DateTimeOffset.FromUnixTimeSeconds(expirationSeconds);
                 if (expirationTime < DateTimeOffset.UtcNow)
                 {
@@ -113,10 +145,31 @@ namespace DataOnion.Auth
                     return null;
                 }
             }
+            else
+            {
+                _logger?.LogWarning(
+                    "Redis item '{0}' has invalid expiration: {1}. Invalidating session.",
+                    redisKey,
+                    expirationRedisValue
+                );
+                await _database.KeyDeleteAsync(redisKey);
+                return null;
+            }
 
-            await SetExpirationAsync(redisKey);
-            var fullRedisHash = await _database.HashGetAllAsync(redisKey);
-            return _config.ConstructFromHash(fullRedisHash);
+            try
+            {
+                await SetExpirationAsync(redisKey);
+                var fullRedisHash = await _database.HashGetAllAsync(redisKey);
+                return _config.ConstructFromHash(fullRedisHash);
+            }
+            catch (RedisException e)
+            {
+                _logger?.LogError(
+                    e,
+                    "Unexpected Redis error, see exception message for details"
+                );
+                throw;
+            }
         }
 
         public async Task LogoutAsync(string id)
