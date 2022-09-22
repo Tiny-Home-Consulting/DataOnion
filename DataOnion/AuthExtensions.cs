@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using DataOnion.Auth;
 using StackExchange.Redis;
+using Microsoft.Extensions.Logging;
 
 namespace DataOnion
 {
@@ -40,7 +41,12 @@ namespace DataOnion
 
         public IFluentAuthStategyOnion ConfigureRedis(string connectionString)
         {
-            _serviceCollection.AddSingleton<IRedisManager>(new RedisManager(connectionString));
+            _serviceCollection.AddSingleton<IRedisManager>(provider =>
+                new RedisManager(
+                    connectionString,
+                    provider.GetService<ILogger>()
+                )
+            );
 
             return this;
         }

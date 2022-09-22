@@ -29,7 +29,11 @@ namespace DataOnion.Auth
                 "Logging in with strategy {0}",
                 _strategy.GetType()
             );
-            return await _strategy.LoginAsync(userSession);
+            var session = await _strategy.LoginAsync(userSession);
+            _logger?.LogDebug(
+                "Finished logging in."
+            );
+            return session;
         }
 
         public async Task<T?> GetSessionAsync(string id)
@@ -38,7 +42,11 @@ namespace DataOnion.Auth
                 "Getting session with strategy {0}",
                 _strategy.GetType()
             );
-            return await _strategy.GetSessionAsync(id);
+            var session = await _strategy.GetSessionAsync(id);
+            _logger?.LogDebug(
+                "Finished getting session."
+            );
+            return session;
         }
 
         public async Task LogoutAsync(string id)
@@ -48,6 +56,9 @@ namespace DataOnion.Auth
                 _strategy.GetType()
             );
             await _strategy.LogoutAsync(id);
+            _logger?.LogDebug(
+                "Finished logging out."
+            );
         }
     }
 }
