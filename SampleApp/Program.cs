@@ -2,7 +2,6 @@ using DataOnion;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 using SampleApp.db;
-using StackExchange.Redis;
 using SampleApp.Models;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -18,13 +17,13 @@ services.AddDatabaseOnion(dbConnectionString)
     .ConfigureEfCore<ApplicationContext>(str => opt => opt.UseNpgsql(str));
 
 services.AddAuthOnion(environment)
-    .ConfigureRedis(redisConnectionString)
     .ConfigureSlidingExpiration<LoginData>(
         TimeSpan.FromMinutes(30),
         TimeSpan.FromHours(12),
         authPrefix,
         hash => new LoginData(hash)
-    );
+    )
+    .ConfigureRedis(redisConnectionString);
 
 
 // Add services to the container.

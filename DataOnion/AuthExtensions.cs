@@ -4,18 +4,24 @@ using StackExchange.Redis;
 
 namespace DataOnion
 {
-    public interface IFluentAuthOnion
+    public interface IFluentAuthOnion : IFluentRedisOnion, IFluentAuthStategyOnion {}
+
+    public interface IFluentRedisOnion
     {
-        IFluentAuthOnion ConfigureSlidingExpiration<T>(
+        IFluentAuthStategyOnion ConfigureRedis(string connectionString);
+    }
+
+    public interface IFluentAuthStategyOnion
+    {
+        IFluentRedisOnion ConfigureSlidingExpiration<T>(
             TimeSpan expiration,
             TimeSpan? absoluteExpiration,
             string authPrefix,
             Func<HashEntry[], T> makeFromHash,
             string expirationKey = "expiration"
-        )
-            where T : class, IAuthStorable<T>;
+        ) where T : class, IAuthStorable<T>;
 
-        IFluentAuthOnion ConfigureRedis(string connectionString);
+        IFluentRedisOnion AddCustomAuthStrategy<T>(IAuthServiceStrategy<T> authStrategy);
     }
 
     public class FluentAuthOnion : IFluentAuthOnion
@@ -32,14 +38,14 @@ namespace DataOnion
             _environmentPrefix = environmentPrefix;
         }
 
-        public IFluentAuthOnion ConfigureRedis(string connectionString)
+        public IFluentAuthStategyOnion ConfigureRedis(string connectionString)
         {
             _serviceCollection.AddSingleton<IRedisManager>(new RedisManager(connectionString));
 
             return this;
         }
 
-        public IFluentAuthOnion ConfigureSlidingExpiration<T>(
+        public IFluentRedisOnion ConfigureSlidingExpiration<T>(
             TimeSpan slidingExpiration,
             TimeSpan? absoluteExpiration,
             string authPrefix,
@@ -48,21 +54,25 @@ namespace DataOnion
         )
             where T : class, IAuthStorable<T>
         {
+            _serviceCollection.AddScoped(typeof(IAuthService<>), typeof(AuthService<>));
             _serviceCollection.AddScoped(typeof(IAuthServiceStrategy<>), typeof(SlidingExpirationStrategy<>));
 
-            _serviceCollection.AddSingleton<SlidingExpirationConfig<T>>(new SlidingExpirationConfig<T>
-            {
-                AbsoluteExpiration = absoluteExpiration,
-                AuthPrefix = authPrefix,
-                ConstructFromHash = makeFromHash,
-                EnvironmentPrefix = _environmentPrefix,
-                ExpirationKey = expirationKey,
-                SlidingExpiration = slidingExpiration
-            });
+            _serviceCollection.AddSingleton<SlidingExpirationConfig<T>>(new SlidingExpirationConfig<T>(
+                slidingExpiration,
+                absoluteExpiration,
+                expirationKey,
+                _environmentPrefix,
+                authPrefix,
+                makeFromHash
+            ));
 
-            _serviceCollection.AddScoped<IAuthService<T>>(provider =>
-                new AuthService<T>(provider.GetRequiredService<IAuthServiceStrategy<T>>())
-            );
+            return this;
+        }
+
+        public IFluentRedisOnion AddCustomAuthStrategy<T>(IAuthServiceStrategy<T> authStrategy)
+        {
+            _serviceCollection.AddScoped(typeof(IAuthService<>), typeof(AuthService<>));
+            _serviceCollection.AddSingleton<IAuthServiceStrategy<T>>(authStrategy);
 
             return this;
         }

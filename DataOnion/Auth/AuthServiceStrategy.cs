@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 
 namespace DataOnion.Auth
 {
-    internal interface IAuthServiceStrategy<T>
+    public interface IAuthServiceStrategy<T>
     {
         Task<T?> LoginAsync(T userSession);
         Task<T?> GetSessionAsync(string id);
@@ -18,15 +18,32 @@ namespace DataOnion.Auth
 
     public class SlidingExpirationConfig<T>
     {
-        public TimeSpan SlidingExpiration { get; set; }
-        public TimeSpan? AbsoluteExpiration { get; set; }
-        public string ExpirationKey { get; set; }
-        public string EnvironmentPrefix { get; set; }
-        public string AuthPrefix { get; set; }
-        public Func<HashEntry[], T> ConstructFromHash { get; set; }
+        public TimeSpan SlidingExpiration { get; private set; }
+        public TimeSpan? AbsoluteExpiration { get; private set; }
+        public string ExpirationKey { get; private set; }
+        public string EnvironmentPrefix { get; private set; }
+        public string AuthPrefix { get; private set; }
+        public Func<HashEntry[], T> ConstructFromHash { get; private set; }
+
+        public SlidingExpirationConfig(
+            TimeSpan slidingExpiration,
+            TimeSpan? absoluteExpiration,
+            string expirationKey,
+            string environmentPrefix,
+            string authPrefix,
+            Func<HashEntry[], T> constructFromHash
+        )
+        {
+            SlidingExpiration = slidingExpiration;
+            AbsoluteExpiration = absoluteExpiration;
+            ExpirationKey = expirationKey;
+            EnvironmentPrefix = environmentPrefix;
+            AuthPrefix = authPrefix;
+            ConstructFromHash = constructFromHash;
+        }
     }
 
-    public class SlidingExpirationStrategy<T> : IAuthServiceStrategy<T>
+    internal class SlidingExpirationStrategy<T> : IAuthServiceStrategy<T>
         where T : class, IAuthStorable<T>
     {
         private readonly IRedisManager _redisManager;
@@ -34,12 +51,9 @@ namespace DataOnion.Auth
         private readonly ILogger? _logger;
 
         private IDatabase _database => _redisManager.GetDatabase();
-        private string _expirationTimeStr => DateTimeOffset.UtcNow
-            .Add(_config.SlidingExpiration)
-            .ToUnixTimeSeconds()
-            .ToString();
+        private DateTimeOffset _expirationTime => DateTimeOffset.UtcNow
+            .Add(_config.SlidingExpiration);
 
-        // Making the logger default to null means it won't throw an exception if there is no logger in DI.
         public SlidingExpirationStrategy(
             IRedisManager redisManager,
             SlidingExpirationConfig<T> config,
@@ -53,18 +67,20 @@ namespace DataOnion.Auth
 
         private async Task SetExpirationAsync(RedisKey key)
         {
+            var newExpiration = _expirationTime;
             _logger?.LogDebug(
-                "Bumping expiration for key '{0}'",
-                key
+                "Bumping expiration for key '{0}' to {1}",
+                key,
+                newExpiration
             );
             await _database.HashSetAsync(
                 key,
                 _config.ExpirationKey,
-                _expirationTimeStr
+                newExpiration.ToUnixTimeSeconds().ToString()
             );
         }
 
-        private RedisKey BuildKey(string id) => new($"{_config.EnvironmentPrefix}_${_config.AuthPrefix}_${id}");
+        private RedisKey BuildKey(string id) => new($"{_config.EnvironmentPrefix}_{_config.AuthPrefix}_{id}");
 
         public async Task<T?> LoginAsync(T userSession)
         {
@@ -86,7 +102,10 @@ namespace DataOnion.Auth
                     id,
                     userSession
                         .ToRedisHash()
-                        .Append(new HashEntry(_config.ExpirationKey, _expirationTimeStr))
+                        .Append(new HashEntry(
+                            _config.ExpirationKey,
+                            _expirationTime.ToUnixTimeSeconds().ToString()
+                        ))
                         .ToArray()
                 );
                 await _database.KeyExpireAsync(id, _config.AbsoluteExpiration);
