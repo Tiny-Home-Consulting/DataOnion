@@ -6,9 +6,9 @@ namespace SampleApp.Models
 
     public class LoginData : IAuthStorable<LoginData>
     {
-        public string Username { get; set; }
-        public string Password { get; set; }
-        public Guid SessionId { get; set; }
+        public string Username { get; private set; }
+        public string Password { get; private set; }
+        public Guid SessionId { get; private set; }
 
         public LoginData(
             string username,
