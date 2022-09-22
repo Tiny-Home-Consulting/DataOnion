@@ -78,6 +78,10 @@ namespace DataOnion.Auth
 
             if (redisHash.Length == 0)
             {
+                _logger?.LogDebug(
+                    "Session does not exist, creating hash in Redis at '{0}'",
+                    id
+                );
                 await _database.HashSetAsync(
                     id,
                     userSession
@@ -90,9 +94,18 @@ namespace DataOnion.Auth
             }
             else
             {
+                _logger?.LogDebug(
+                    "Redis item with id '{0}' found; comparing to provided session",
+                    id
+                );
+
                 var session = _config.ConstructFromHash(redisHash);
                 if (userSession.Equals(session))
                 {
+                    _logger?.LogDebug(
+                        "Existing session at '{0}' is still valid, reusing",
+                        id
+                    );
                     try
                     {
                         await SetExpirationAsync(id);
@@ -141,6 +154,10 @@ namespace DataOnion.Auth
                 var expirationTime = DateTimeOffset.FromUnixTimeSeconds(expirationSeconds);
                 if (expirationTime < DateTimeOffset.UtcNow)
                 {
+                    _logger?.LogDebug(
+                        "Session at '{0}' expired, removing from Redis",
+                        id
+                    );
                     await _database.KeyDeleteAsync(redisKey);
                     return null;
                 }
