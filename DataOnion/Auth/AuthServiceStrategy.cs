@@ -139,7 +139,14 @@ namespace DataOnion.Auth
                     }
                     return session;
                 }
-                return null;
+                else
+                {
+                    _logger?.LogDebug(
+                        "Session provided does not match existing session at '{0}'",
+                        id
+                    );
+                    return null;
+                }
             }
         }
 

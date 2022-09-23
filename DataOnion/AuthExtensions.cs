@@ -44,7 +44,7 @@ namespace DataOnion
             _serviceCollection.AddSingleton<IRedisManager>(provider =>
                 new RedisManager(
                     connectionString,
-                    provider.GetService<ILogger>()
+                    provider.GetService<ILogger<RedisManager>>()
                 )
             );
 

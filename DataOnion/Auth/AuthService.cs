@@ -31,7 +31,7 @@ namespace DataOnion.Auth
             );
             var session = await _strategy.LoginAsync(userSession);
             _logger?.LogDebug(
-                "Finished logging in."
+                session == null ? "Login flow completed. Login successful." : "Login flow completed. Login unsuccessful."
             );
             return session;
         }
