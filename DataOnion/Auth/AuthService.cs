@@ -16,7 +16,7 @@ namespace DataOnion.Auth
 
         public AuthService(
             IAuthServiceStrategy<T> strategy,
-            ILogger? logger = null
+            ILogger<AuthService<T>>? logger = null
         )
         {
             _strategy = strategy;

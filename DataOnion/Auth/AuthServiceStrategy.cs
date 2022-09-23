@@ -57,7 +57,7 @@ namespace DataOnion.Auth
         public SlidingExpirationStrategy(
             IRedisManager redisManager,
             SlidingExpirationConfig<T> config,
-            ILogger? logger = null
+            ILogger<SlidingExpirationStrategy<T>>? logger = null
         )
         {
             _redisManager = redisManager;
