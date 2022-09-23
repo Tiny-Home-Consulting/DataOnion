@@ -183,7 +183,7 @@ namespace DataOnion.Auth
             }
             else
             {
-                _logger?.LogWarning(
+                _logger?.LogDebug(
                     "Redis item '{0}' has invalid expiration: {1}. Invalidating session.",
                     redisKey,
                     expirationRedisValue
