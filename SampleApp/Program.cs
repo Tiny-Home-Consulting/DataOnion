@@ -2,21 +2,28 @@ using DataOnion;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 using SampleApp.db;
+using SampleApp.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
 
-var connectionString = "";
+var dbConnectionString = "";
+var redisConnectionString = "";
+var environment = "DEV";
+var authPrefix = "usersession";
 
-services.AddDatabaseOnion(connectionString)
+services.AddDatabaseOnion(dbConnectionString)
     .ConfigureDapper<NpgsqlConnection>(str => new NpgsqlConnection(str))
     .ConfigureEfCore<ApplicationContext>(str => opt => opt.UseNpgsql(str));
 
-
-
-
-
-
+services.AddAuthOnion(environment)
+    .ConfigureSlidingExpiration<LoginData>(
+        TimeSpan.FromMinutes(30),
+        TimeSpan.FromHours(12),
+        authPrefix,
+        hash => new LoginData(hash)
+    )
+    .ConfigureRedis(redisConnectionString);
 
 
 // Add services to the container.
