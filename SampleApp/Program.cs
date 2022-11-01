@@ -23,7 +23,8 @@ services.AddAuthOnion(environment)
         authPrefix,
         hash => new LoginData(hash)
     )
-    .ConfigureRedis(redisConnectionString);
+    .ConfigureRedis(redisConnectionString)
+    .ConfigureTwoFactorAuth();
 
 
 // Add services to the container.

@@ -5,16 +5,19 @@ using Microsoft.Extensions.Logging;
 
 namespace DataOnion
 {
-    public interface IFluentAuthOnion : IFluentRedisOnion, IFluentAuthStategyOnion {}
+    public interface IFluentAuthOnion : 
+        IFluentRedisOnion, 
+        IFluentAuthStategyOnion,
+        IFluentTwoFactorAuthOnion {}
 
     public interface IFluentRedisOnion
     {
-        IFluentAuthStategyOnion ConfigureRedis(string connectionString);
+        IFluentAuthOnion ConfigureRedis(string connectionString);
     }
 
     public interface IFluentAuthStategyOnion
     {
-        IFluentRedisOnion ConfigureSlidingExpiration<T>(
+        IFluentAuthOnion ConfigureSlidingExpiration<T>(
             TimeSpan expiration,
             TimeSpan? absoluteExpiration,
             string authPrefix,
@@ -22,7 +25,12 @@ namespace DataOnion
             string expirationKey = "expiration"
         ) where T : class, IAuthStorable<T>;
 
-        IFluentRedisOnion AddCustomAuthStrategy<T>(IAuthServiceStrategy<T> authStrategy);
+        IFluentAuthOnion AddCustomAuthStrategy<T>(IAuthServiceStrategy<T> authStrategy);
+    }
+
+    public interface IFluentTwoFactorAuthOnion
+    {
+        IFluentAuthOnion ConfigureTwoFactorAuth();
     }
 
     public class FluentAuthOnion : IFluentAuthOnion
@@ -39,7 +47,7 @@ namespace DataOnion
             _environmentPrefix = environmentPrefix;
         }
 
-        public IFluentAuthStategyOnion ConfigureRedis(string connectionString)
+        public IFluentAuthOnion ConfigureRedis(string connectionString)
         {
             _serviceCollection.AddSingleton<IRedisManager>(provider =>
                 new RedisManager(
@@ -51,7 +59,7 @@ namespace DataOnion
             return this;
         }
 
-        public IFluentRedisOnion ConfigureSlidingExpiration<T>(
+        public IFluentAuthOnion ConfigureSlidingExpiration<T>(
             TimeSpan slidingExpiration,
             TimeSpan? absoluteExpiration,
             string authPrefix,
@@ -75,10 +83,22 @@ namespace DataOnion
             return this;
         }
 
-        public IFluentRedisOnion AddCustomAuthStrategy<T>(IAuthServiceStrategy<T> authStrategy)
+        public IFluentAuthOnion AddCustomAuthStrategy<T>(IAuthServiceStrategy<T> authStrategy)
         {
             _serviceCollection.AddScoped(typeof(IAuthService<>), typeof(AuthService<>));
             _serviceCollection.AddSingleton<IAuthServiceStrategy<T>>(authStrategy);
+
+            return this;
+        }
+
+        public IFluentAuthOnion ConfigureTwoFactorAuth()
+        {
+            // take care of DI
+            _serviceCollection.AddScoped<ITwoFactorAuthService, TwoFactorAuthService>( provider =>
+                new TwoFactorAuthService(
+                    provider.GetService<ILogger<TwoFactorAuthService>>
+                )
+            );
 
             return this;
         }
