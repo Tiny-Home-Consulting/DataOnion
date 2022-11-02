@@ -39,8 +39,8 @@ namespace DataOnion
             int twoFactorThrottleTimeoutSeconds,
             Func<int> generate2FACode
         )
-            where TDid : IDid, new()
-            where TUser : IUser, new();
+            where TDid : DidBase, new()
+            where TUser : TwoFactorAuthUserBase, new();
     }
 
     public class FluentAuthOnion : IFluentAuthOnion
@@ -107,8 +107,8 @@ namespace DataOnion
             int twoFactorThrottleTimeoutSeconds,
             Func<int> generate2FACode
         )
-            where TDid : IDid, new()
-            where TUser : IUser, new()
+            where TDid : DidBase, new()
+            where TUser : TwoFactorAuthUserBase, new()
         {
             _serviceCollection.AddScoped<ITwoFactorRedisContext, TwoFactorRedisContext>( provider =>
                 new TwoFactorRedisContext(
@@ -120,7 +120,7 @@ namespace DataOnion
             );
             _serviceCollection.AddScoped<ITwoFactorAuthService<TDid, TUser>, TwoFactorAuthService<TDid, TUser>>( provider =>
                 new TwoFactorAuthService<TDid, TUser>(
-                    provider.GetRequiredService<ITwoFactorRedisContext>(),
+                    provider.GetService<ITwoFactorRedisContext>(),
                     provider.GetService<IDapperService<DbConnection>>(),
                     provider.GetService<IEFCoreService<DbContext>>(),
                     provider.GetService<ILogger<TwoFactorAuthService<TDid, TUser>>>(),
@@ -147,16 +147,16 @@ namespace DataOnion
         }
     }
 
-    public abstract class IDid : IEntity<Guid>
+    public abstract class DidBase : IEntity<Guid>
     {
         public Guid Id { get; set; }
         public string Number { get; set; }
-        public IUser User { get; set; }
+        public TwoFactorAuthUserBase User { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
     }
 
-    public abstract class IUser : IEntity<int>
+    public abstract class TwoFactorAuthUserBase : IEntity<int>
     {
         public int Id { get; set; }
     }

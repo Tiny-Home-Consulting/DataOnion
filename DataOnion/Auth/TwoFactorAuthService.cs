@@ -8,8 +8,8 @@ using System.Net;
 namespace DataOnion.Auth
 {
     public interface ITwoFactorAuthService<TDid, TUser>
-        where TDid : IDid
-        where TUser : IUser
+        where TDid : DidBase
+        where TUser : TwoFactorAuthUserBase
     {
         Task<Guid> RegisterDidAsync(
             RegisterDidParams parameters
@@ -21,8 +21,8 @@ namespace DataOnion.Auth
     }
 
     public class TwoFactorAuthService<TDid, TUser> : ITwoFactorAuthService<TDid, TUser>
-        where TDid : IDid, new()
-        where TUser : IUser, new()
+        where TDid : DidBase, new()
+        where TUser : TwoFactorAuthUserBase, new()
     {
         private readonly ITwoFactorRedisContext _redisContext;
         private readonly IDapperService<DbConnection> _dapper;
@@ -48,7 +48,6 @@ namespace DataOnion.Auth
             _twoFactorThrottleTimeoutSeconds = twoFactorThrottleTimeoutSeconds;
             _generate2FACode = generate2FACode;
         }
-
 
         public async Task<Guid> RegisterDidAsync(
             RegisterDidParams parameters
@@ -159,7 +158,7 @@ namespace DataOnion.Auth
             {
                 if (token != recentRequest.Token)
                 {
-                    throw new EntityNotfoundException<TwoFactorRequest>();
+                    throw new EntityNotFoundException<TwoFactorRequest>();
                 }
 
                 var existingUser = await _efCore.FetchAsync<TUser, int>(userId);

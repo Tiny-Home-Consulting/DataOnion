@@ -10,11 +10,11 @@ namespace DataOnion.Models
     }
 
     // Not Found 404
-    public class EntityNotfoundException<T> : ApiException
+    public class EntityNotFoundException<T> : ApiException
     {
         public override HttpStatusCode StatusCodeEnum => HttpStatusCode.NotFound;
 
-        public EntityNotfoundException(string? message = null) : base(message ?? $"The requested {typeof(T).Name} was not found.") {}
+        public EntityNotFoundException(string? message = null) : base(message ?? $"The requested {typeof(T).Name} was not found.") {}
     }
 
     // Too Many Requests 429
