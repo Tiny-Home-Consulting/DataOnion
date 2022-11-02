@@ -1,7 +1,10 @@
 using Microsoft.Extensions.DependencyInjection;
 using DataOnion.Auth;
+using DataOnion.db;
 using StackExchange.Redis;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using System.Data.Common;
 
 namespace DataOnion
 {
@@ -30,7 +33,14 @@ namespace DataOnion
 
     public interface IFluentTwoFactorAuthOnion
     {
-        IFluentAuthOnion ConfigureTwoFactorAuth();
+        IFluentAuthOnion ConfigureTwoFactorAuth<TDid, TUser>(
+            string envPrefix,
+            string twoFactorAuthPrefix,
+            int twoFactorThrottleTimeoutSeconds,
+            Func<int> generate2FACode
+        )
+            where TDid : IDid, new()
+            where TUser : IUser, new();
     }
 
     public class FluentAuthOnion : IFluentAuthOnion
@@ -91,12 +101,31 @@ namespace DataOnion
             return this;
         }
 
-        public IFluentAuthOnion ConfigureTwoFactorAuth()
+        public IFluentAuthOnion ConfigureTwoFactorAuth<TDid, TUser>(
+            string envPrefix,
+            string twoFactorAuthPrefix,
+            int twoFactorThrottleTimeoutSeconds,
+            Func<int> generate2FACode
+        )
+            where TDid : IDid, new()
+            where TUser : IUser, new()
         {
-            // take care of DI
-            _serviceCollection.AddScoped<ITwoFactorAuthService, TwoFactorAuthService>( provider =>
-                new TwoFactorAuthService(
-                    provider.GetService<ILogger<TwoFactorAuthService>>
+            _serviceCollection.AddScoped<ITwoFactorRedisContext, TwoFactorRedisContext>( provider =>
+                new TwoFactorRedisContext(
+                    envPrefix,
+                    twoFactorAuthPrefix,
+                    provider.GetService<IRedisManager>(),
+                    provider.GetService<ILogger<TwoFactorRedisContext>>()
+                )
+            );
+            _serviceCollection.AddScoped<ITwoFactorAuthService<TDid, TUser>, TwoFactorAuthService<TDid, TUser>>( provider =>
+                new TwoFactorAuthService<TDid, TUser>(
+                    provider.GetRequiredService<ITwoFactorRedisContext>(),
+                    provider.GetService<IDapperService<DbConnection>>(),
+                    provider.GetService<IEFCoreService<DbContext>>(),
+                    provider.GetService<ILogger<TwoFactorAuthService<TDid, TUser>>>(),
+                    twoFactorThrottleTimeoutSeconds,
+                    generate2FACode
                 )
             );
 
@@ -116,5 +145,19 @@ namespace DataOnion
                 environmentPrefix
             );
         }
+    }
+
+    public abstract class IDid : IEntity<Guid>
+    {
+        public Guid Id { get; set; }
+        public string Number { get; set; }
+        public IUser User { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public DateTime UpdatedAt { get; set; }
+    }
+
+    public abstract class IUser : IEntity<int>
+    {
+        public int Id { get; set; }
     }
 }

@@ -1,12 +1,15 @@
 using DataOnion.db;
+using DataOnion.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System.Data.Common;
-using System.Text.Json.Serialization;
+using System.Net;
 
 namespace DataOnion.Auth
 {
-    public interface ITwoFactorAuthService
+    public interface ITwoFactorAuthService<TDid, TUser>
+        where TDid : IDid
+        where TUser : IUser
     {
         Task<Guid> RegisterDidAsync(
             RegisterDidParams parameters
@@ -17,33 +20,33 @@ namespace DataOnion.Auth
         );
     }
 
-    public class TwoFactorAuthService : ITwoFactorAuthService
+    public class TwoFactorAuthService<TDid, TUser> : ITwoFactorAuthService<TDid, TUser>
+        where TDid : IDid, new()
+        where TUser : IUser, new()
     {
-        private readonly ApplicationConfig _appConfig; // this should come from the client
-        private readonly IRedisContext _redisContext;
-        private readonly INumberGenerator _numberGenerator; // this can come from DataOnion
-        private readonly IUserRepository<T> _userRepository; // this has to come from the client
+        private readonly ITwoFactorRedisContext _redisContext;
         private readonly IDapperService<DbConnection> _dapper;
         private readonly IEFCoreService<DbContext> _efCore;
-        private readonly ILogger _logger;
+        private readonly ILogger? _logger;
+
+        private readonly int _twoFactorThrottleTimeoutSeconds;
+        private Func<int> _generate2FACode;
 
         public TwoFactorAuthService(
-            ApplicationConfig appConfig,
-            IRedisContext redisContext,
-            INumberGenerator numberGenerator,
-            ICpcUserRepository cpcUserRepository,
+            ITwoFactorRedisContext redisContext,
             IDapperService<DbConnection> dapper,
             IEFCoreService<DbContext> efCore,
-            ILogger<TwoFactorAuthService> logger
+            ILogger<TwoFactorAuthService<TDid, TUser>>? logger,
+            int twoFactorThrottleTimeoutSeconds,
+            Func<int> generate2FACode
         )
         {
-            _appConfig = appConfig;
             _redisContext = redisContext;
-            _numberGenerator = numberGenerator;
-            _cpcUserRepository = cpcUserRepository;
             _efCore = efCore;
             _dapper = dapper;
             _logger = logger;
+            _twoFactorThrottleTimeoutSeconds = twoFactorThrottleTimeoutSeconds;
+            _generate2FACode = generate2FACode;
         }
 
 
@@ -53,9 +56,7 @@ namespace DataOnion.Auth
         {
             var did = parameters.Did;
             var method = parameters.Method;
-            var language = parameters.Language;
             var userId = parameters.UserId;
-            var throttleTimeout = _appConfig.TwoFactorAuthentication.TwoFactorThrottleTimeoutSeconds;
 
             switch (method)
             {
@@ -98,7 +99,7 @@ namespace DataOnion.Auth
                     break;
             }
 
-            var code = _numberGenerator.Generate2FACode();
+            var code = _generate2FACode.Invoke();
             var token = Guid.NewGuid();
 
             await _redisContext.CreateTwoFactorRequestAsync(
@@ -161,35 +162,35 @@ namespace DataOnion.Auth
                     throw new EntityNotfoundException<TwoFactorRequest>();
                 }
 
-                var existingUser = await _cpcUserRepository.FetchAsync(userId);
+                var existingUser = await _efCore.FetchAsync<TUser, int>(userId);
 
                 if (existingUser == null)
                 {
-                    var newCpcUser = new CpcUser()
+                    var newUser = new TUser()
                     {
                         Id = userId
                     };
 
-                    existingUser = await _cpcUserRepository.CreateAsync(newCpcUser);
+                    existingUser = await _efCore.CreateAsync<TUser>(newUser);
                 }
 
-                var existingDid = await _efCore.FetchAsync(d
+                var existingDid = await _efCore.FetchAsync<TDid>(d
                     => d.Number == recentRequest.Did);
 
                 if (existingDid == null)
                 {
-                    await _didRepository.CreateAsync(new Did
+                    await _efCore.CreateAsync(new TDid
                     {
                         Number = recentRequest.Did,
-                        CpcUser = existingUser
+                        User = existingUser
                     });
                 }
                 else
                 {
-                    existingDid.CpcUser = existingUser;
+                    existingDid.User = existingUser;
                     existingDid.UpdatedAt = DateTime.UtcNow;
 
-                    await _didRepository.UpdateAsync(
+                    await _efCore.UpdateAsync(
                         existingDid.Id,
                         existingDid
                     );
@@ -199,7 +200,7 @@ namespace DataOnion.Auth
                     userId
                 );
 
-                _logger.LogInformation($"Verified did {recentRequest.Did} for CPC user {parameters.UserId}");
+                _logger?.LogInformation($"Verified did {recentRequest.Did} for CPC user {parameters.UserId}");
             }
 
             // If the code didn't match, recentRequest == null
@@ -230,7 +231,7 @@ namespace DataOnion.Auth
                 return (false, 0);
             }
             
-            var throttleTimeout = _appConfig.TwoFactorAuthentication.TwoFactorThrottleTimeoutSeconds;
+            var throttleTimeout = _twoFactorThrottleTimeoutSeconds;
             var timeoutSpan = TimeSpan.FromSeconds(throttleTimeout);
             var createdAt = existingRequest.CreatedAt;
             var now = DateTime.UtcNow;
@@ -301,20 +302,13 @@ namespace DataOnion.Auth
         Text
     }
 
-    public class TwoFactorRequest
-    {
-        public string Did { get; set; }
-        public int VerificationCode { get; set; }
-        public DateTime CreatedAt { get; set; }
-        public Guid Token { get; set; }
-        public VerificationMethod Method { get; set; }
-    }
-
-    public interface IUserRepository<T>
-    {
-        Task<T?> FetchAsync(int id);
-        Task<T> CreateAsync(T entity);
-        Task<T?> GetUserAndAppInstancesByIdAsync(int userId);
-        Task<T?> GetUserDidsAndAppInstancesByIdAsync(int userId);
+    public class ExceptionWithCode : Exception {
+        public HttpStatusCode StatusCode;
+        public ExceptionWithCode(
+            HttpStatusCode statusCode,
+            string message
+        ) : base(message) {
+            StatusCode = statusCode;
+        }
     }
 }
