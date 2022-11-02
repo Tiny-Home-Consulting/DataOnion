@@ -3,7 +3,7 @@
     <Title>Data Onion</Title>
     <Description>A collection of useful wrappers around Dapper, Entity Framework and other packages to accelerate early project development.</Description>
     <PackageId>DataOnion</PackageId>
-    <Version>0.0.2</Version>
+    <Version>0.0.3</Version>
     <Authors>Kyle Lawhorn</Authors>
     <Company>Tiny Home Consulting, LLC.</Company>
     <Copyright>Copyright (c) 2022 Tiny Home Consulting, LLC.</Copyright>

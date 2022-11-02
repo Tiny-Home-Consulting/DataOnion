@@ -2,7 +2,7 @@ using System.Data.Common;
 
 namespace DataOnion.db
 {
-    public interface IDapperService<TDbConnection>
+    public interface IDapperService<TDbConnection> : IDisposable
         where TDbConnection : DbConnection
     {
         Task<IEnumerable<TReturn>> QueryAndReturnAsync<TReturn>(

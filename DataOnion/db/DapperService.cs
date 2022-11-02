@@ -20,15 +20,12 @@ namespace DataOnion.db
             object? parameters = null
         )
         {
-            using (var conn = _connection)
-            {
-                var result = await conn.QueryAsync<TReturn>(
-                    query,
-                    parameters
-                );
+            var result = await _connection.QueryAsync<TReturn>(
+                query,
+                parameters
+            );
 
-                return result;
-            }
+            return result;
         }
 
         public async Task<IEnumerable<TFirst>> QueryAndReturnAsync<TFirst, TSecond>(
@@ -37,17 +34,14 @@ namespace DataOnion.db
             string? splitOn = null,
             object? parameters = null
         )
-        {
-            using (var conn = _connection)
-            {                
-                var result = await conn.QueryAsync<TFirst, TSecond, TFirst>(
-                    query,
-                    mappingFunction,
-                    parameters
-                );
+        {             
+            var result = await _connection.QueryAsync<TFirst, TSecond, TFirst>(
+                query,
+                mappingFunction,
+                parameters
+            );
 
-                return result;
-            }
+            return result;
         }
 
         public async Task<IEnumerable<TFirst>> QueryAndReturnAsync<TFirst, TSecond, TThird>(
@@ -56,17 +50,14 @@ namespace DataOnion.db
             string? splitOn = null,
             object? parameters = null
         )
-        {
-            using (var conn = _connection)
-            {                
-                var result = await conn.QueryAsync<TFirst, TSecond, TThird, TFirst>(
-                    query,
-                    mappingFunction,
-                    parameters
-                );
+        {            
+            var result = await _connection.QueryAsync<TFirst, TSecond, TThird, TFirst>(
+                query,
+                mappingFunction,
+                parameters
+            );
 
-                return result;
-            }
+            return result;
         }
 
         public async Task<IEnumerable<TFirst>> QueryAndReturnAsync<TFirst, TSecond, TThird, TFourth>(
@@ -75,17 +66,14 @@ namespace DataOnion.db
             string? splitOn = null,
             object? parameters = null
         )
-        {
-            using (var conn = _connection)
-            {                
-                var result = await conn.QueryAsync<TFirst, TSecond, TThird, TFourth, TFirst>(
-                    query,
-                    mappingFunction,
-                    parameters
-                );
+        {            
+            var result = await _connection.QueryAsync<TFirst, TSecond, TThird, TFourth, TFirst>(
+                query,
+                mappingFunction,
+                parameters
+            );
 
-                return result;
-            }
+            return result;
         }
 
         public async Task<IEnumerable<TFirst>> QueryAndReturnAsync<TFirst, TSecond, TThird, TFourth, TFifth>(
@@ -94,17 +82,14 @@ namespace DataOnion.db
             string? splitOn = null,
             object? parameters = null
         )
-        {
-            using (var conn = _connection)
-            {                
-                var result = await conn.QueryAsync<TFirst, TSecond, TThird, TFourth, TFifth, TFirst>(
-                    query,
-                    mappingFunction,
-                    parameters
-                );
+        {             
+            var result = await _connection.QueryAsync<TFirst, TSecond, TThird, TFourth, TFifth, TFirst>(
+                query,
+                mappingFunction,
+                parameters
+            );
 
-                return result;
-            }
+            return result;
         }
 
         public async Task<IEnumerable<TFirst>> QueryAndReturnAsync<TFirst, TSecond, TThird, TFourth, TFifth, TSixth>(
@@ -113,17 +98,14 @@ namespace DataOnion.db
             string? splitOn = null,
             object? parameters = null
         )
-        {
-            using (var conn = _connection)
-            {                
-                var result = await conn.QueryAsync<TFirst, TSecond, TThird, TFourth, TFifth, TSixth, TFirst>(
-                    query,
-                    mappingFunction,
-                    parameters
-                );
+        {            
+            var result = await _connection.QueryAsync<TFirst, TSecond, TThird, TFourth, TFifth, TSixth, TFirst>(
+                query,
+                mappingFunction,
+                parameters
+            );
 
-                return result;
-            }
+            return result;
         }
 
         public async Task<IEnumerable<TFirst>> QueryAndReturnAsync<TFirst, TSecond, TThird, TFourth, TFifth, TSixth, TSeventh>(
@@ -132,17 +114,14 @@ namespace DataOnion.db
             string? splitOn = null,
             object? parameters = null
         )
-        {
-            using (var conn = _connection)
-            {                
-                var result = await conn.QueryAsync<TFirst, TSecond, TThird, TFourth, TFifth, TSixth, TSeventh, TFirst>(
-                    query,
-                    mappingFunction,
-                    parameters
-                );
+        {              
+            var result = await _connection.QueryAsync<TFirst, TSecond, TThird, TFourth, TFifth, TSixth, TSeventh, TFirst>(
+                query,
+                mappingFunction,
+                parameters
+            );
 
-                return result;
-            }
+            return result;
         }
 
         public async Task<int> ExecuteAsync(
@@ -150,10 +129,13 @@ namespace DataOnion.db
             object? parameters
         )
         {
-            using (var conn = _connection)
-            {
-                return await conn.ExecuteAsync(query, parameters);
-            }
+            return await _connection.ExecuteAsync(query, parameters);
+        }
+
+        public void Dispose()
+        {
+            _connection.Dispose();
+            GC.SuppressFinalize(this);
         }
     }
 }
