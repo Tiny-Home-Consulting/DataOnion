@@ -208,20 +208,6 @@ namespace DataOnion.Auth
             return recentRequest != null;
         }
 
-                private string ReplaceDigitTags(int code, string body)
-        {
-            var codeString = code.ToString();
-            for (int i = 0; i < 6; i++)
-            {
-                var digitTag = $"[d{i + 1}]";
-                var replacement = codeString[i].ToString();
-
-                body = body.Replace(digitTag, replacement);
-            }
-
-            return body;
-        }
-
         // Checks the TwoFactorRequest's timestamp to see if it has passed the throttle timeout yet.
         private (bool, int) CheckTwoFactorTimeout(TwoFactorRequest? existingRequest)
         {
@@ -299,15 +285,5 @@ namespace DataOnion.Auth
         Unknown,
         Call,
         Text
-    }
-
-    public class ExceptionWithCode : Exception {
-        public HttpStatusCode StatusCode;
-        public ExceptionWithCode(
-            HttpStatusCode statusCode,
-            string message
-        ) : base(message) {
-            StatusCode = statusCode;
-        }
     }
 }
