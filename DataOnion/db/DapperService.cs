@@ -31,14 +31,15 @@ namespace DataOnion.db
         public async Task<IEnumerable<TFirst>> QueryAndReturnAsync<TFirst, TSecond>(
             string query,
             Func<TFirst, TSecond, TFirst> mappingFunction,
-            string? splitOn = null,
+            string splitOn = "Id",
             object? parameters = null
         )
         {             
             var result = await _connection.QueryAsync<TFirst, TSecond, TFirst>(
                 query,
                 mappingFunction,
-                parameters
+                parameters,
+                splitOn: splitOn
             );
 
             return result;
@@ -47,14 +48,15 @@ namespace DataOnion.db
         public async Task<IEnumerable<TFirst>> QueryAndReturnAsync<TFirst, TSecond, TThird>(
             string query,
             Func<TFirst, TSecond, TThird, TFirst> mappingFunction,
-            string? splitOn = null,
+            string splitOn = "Id",
             object? parameters = null
         )
         {            
             var result = await _connection.QueryAsync<TFirst, TSecond, TThird, TFirst>(
                 query,
                 mappingFunction,
-                parameters
+                parameters,
+                splitOn: splitOn
             );
 
             return result;
@@ -63,14 +65,15 @@ namespace DataOnion.db
         public async Task<IEnumerable<TFirst>> QueryAndReturnAsync<TFirst, TSecond, TThird, TFourth>(
             string query,
             Func<TFirst, TSecond, TThird, TFourth, TFirst> mappingFunction,
-            string? splitOn = null,
+            string splitOn = "Id",
             object? parameters = null
         )
         {            
             var result = await _connection.QueryAsync<TFirst, TSecond, TThird, TFourth, TFirst>(
                 query,
                 mappingFunction,
-                parameters
+                parameters,
+                splitOn: splitOn
             );
 
             return result;
@@ -79,14 +82,15 @@ namespace DataOnion.db
         public async Task<IEnumerable<TFirst>> QueryAndReturnAsync<TFirst, TSecond, TThird, TFourth, TFifth>(
             string query,
             Func<TFirst, TSecond, TThird, TFourth, TFifth, TFirst> mappingFunction,
-            string? splitOn = null,
+            string splitOn = "Id",
             object? parameters = null
         )
         {             
             var result = await _connection.QueryAsync<TFirst, TSecond, TThird, TFourth, TFifth, TFirst>(
                 query,
                 mappingFunction,
-                parameters
+                parameters,
+                splitOn: splitOn
             );
 
             return result;
@@ -95,14 +99,15 @@ namespace DataOnion.db
         public async Task<IEnumerable<TFirst>> QueryAndReturnAsync<TFirst, TSecond, TThird, TFourth, TFifth, TSixth>(
             string query,
             Func<TFirst, TSecond, TThird, TFourth, TFifth, TSixth, TFirst> mappingFunction,
-            string? splitOn = null,
+            string splitOn = "Id",
             object? parameters = null
         )
         {            
             var result = await _connection.QueryAsync<TFirst, TSecond, TThird, TFourth, TFifth, TSixth, TFirst>(
                 query,
                 mappingFunction,
-                parameters
+                parameters,
+                splitOn: splitOn
             );
 
             return result;
@@ -111,14 +116,15 @@ namespace DataOnion.db
         public async Task<IEnumerable<TFirst>> QueryAndReturnAsync<TFirst, TSecond, TThird, TFourth, TFifth, TSixth, TSeventh>(
             string query,
             Func<TFirst, TSecond, TThird, TFourth, TFifth, TSixth, TSeventh, TFirst> mappingFunction,
-            string? splitOn = null,
+            string splitOn = "Id",
             object? parameters = null
         )
         {              
             var result = await _connection.QueryAsync<TFirst, TSecond, TThird, TFourth, TFifth, TSixth, TSeventh, TFirst>(
                 query,
                 mappingFunction,
-                parameters
+                parameters,
+                splitOn: splitOn
             );
 
             return result;
