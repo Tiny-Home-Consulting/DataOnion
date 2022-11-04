@@ -11,16 +11,7 @@ var dbConnectionString = "";
 var redisConnectionString = "";
 var environment = "DEV";
 var authPrefix = "usersession";
-var twoFactorThrottleTimeoutSeconds = 60;
 var twoFactorAuthPrefix = "2FA";
-
-int Generate2FACode()
-{
-    var generator = new Random();
-    var code = generator.Next(100000, 1000000);
-
-    return code;
-}
 
 services.AddDatabaseOnion(dbConnectionString)
     .ConfigureDapper<NpgsqlConnection>(str => new NpgsqlConnection(str))
@@ -36,9 +27,7 @@ services.AddAuthOnion(environment)
     .ConfigureRedis(redisConnectionString)
     .ConfigureTwoFactorAuth<TwoFactorAuthDid, TwoFactorAuthUser>(
         environment,
-        twoFactorAuthPrefix,
-        twoFactorThrottleTimeoutSeconds,
-        Generate2FACode
+        twoFactorAuthPrefix
     );
 
 

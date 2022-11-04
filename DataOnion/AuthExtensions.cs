@@ -2,9 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using DataOnion.Auth;
 using DataOnion.db;
 using StackExchange.Redis;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using System.Data.Common;
 
 namespace DataOnion
 {
@@ -35,9 +33,7 @@ namespace DataOnion
     {
         IFluentAuthOnion ConfigureTwoFactorAuth<TDid, TUser>(
             string envPrefix,
-            string twoFactorAuthPrefix,
-            int twoFactorThrottleTimeoutSeconds,
-            Func<int> generate2FACode
+            string twoFactorAuthPrefix
         )
             where TDid : DidBase, new()
             where TUser : TwoFactorAuthUserBase, new();
@@ -103,9 +99,7 @@ namespace DataOnion
 
         public IFluentAuthOnion ConfigureTwoFactorAuth<TDid, TUser>(
             string envPrefix,
-            string twoFactorAuthPrefix,
-            int twoFactorThrottleTimeoutSeconds,
-            Func<int> generate2FACode
+            string twoFactorAuthPrefix
         )
             where TDid : DidBase, new()
             where TUser : TwoFactorAuthUserBase, new()
@@ -118,16 +112,7 @@ namespace DataOnion
                     provider.GetService<ILogger<TwoFactorRedisContext>>()
                 )
             );
-            _serviceCollection.AddScoped<ITwoFactorAuthService<TDid, TUser>, TwoFactorAuthService<TDid, TUser>>( provider =>
-                new TwoFactorAuthService<TDid, TUser>(
-                    provider.GetService<ITwoFactorRedisContext>(),
-                    provider.GetService<IDapperService<DbConnection>>(),
-                    provider.GetService<IEFCoreService<DbContext>>(),
-                    provider.GetService<ILogger<TwoFactorAuthService<TDid, TUser>>>(),
-                    twoFactorThrottleTimeoutSeconds,
-                    generate2FACode
-                )
-            );
+            _serviceCollection.AddScoped<ITwoFactorAuthService<TDid, TUser>, TwoFactorAuthService<TDid, TUser>>();
 
             return this;
         }

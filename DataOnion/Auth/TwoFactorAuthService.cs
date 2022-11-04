@@ -11,7 +11,7 @@ namespace DataOnion.Auth
         where TDid : DidBase
         where TUser : TwoFactorAuthUserBase
     {
-        Task<Guid> RegisterDidAsync(
+        Task<TwoFactorRequest> RegisterDidAsync(
             RegisterDidParams parameters
         );
 
@@ -29,33 +29,28 @@ namespace DataOnion.Auth
         private readonly IEFCoreService<DbContext> _efCore;
         private readonly ILogger? _logger;
 
-        private readonly int _twoFactorThrottleTimeoutSeconds;
-        private Func<int> _generate2FACode;
-
         public TwoFactorAuthService(
             ITwoFactorRedisContext redisContext,
             IDapperService<DbConnection> dapper,
             IEFCoreService<DbContext> efCore,
-            ILogger<TwoFactorAuthService<TDid, TUser>>? logger,
-            int twoFactorThrottleTimeoutSeconds,
-            Func<int> generate2FACode
+            ILogger<TwoFactorAuthService<TDid, TUser>>? logger
         )
         {
             _redisContext = redisContext;
             _efCore = efCore;
             _dapper = dapper;
             _logger = logger;
-            _twoFactorThrottleTimeoutSeconds = twoFactorThrottleTimeoutSeconds;
-            _generate2FACode = generate2FACode;
         }
 
-        public async Task<Guid> RegisterDidAsync(
+        public async Task<TwoFactorRequest> RegisterDidAsync(
             RegisterDidParams parameters
         )
         {
             var did = parameters.Did;
             var method = parameters.Method;
             var userId = parameters.UserId;
+            var code = parameters.VerificationCode;
+            var throttleTimeout = parameters.ThrottleTimeout;
 
             switch (method)
             {
@@ -66,7 +61,7 @@ namespace DataOnion.Auth
                     );
 
                     var recentCallRequest = recentCallRequests.FirstOrDefault();
-                    var callRequestValidity = CheckTwoFactorTimeout(recentCallRequest);
+                    var callRequestValidity = CheckTwoFactorTimeout(recentCallRequest, throttleTimeout);
 
                     if (recentCallRequest != null && !callRequestValidity.Item1)
                     {
@@ -82,7 +77,7 @@ namespace DataOnion.Auth
                     );
 
                     var recentTextRequest = recentTextRequests.FirstOrDefault();
-                    var textRequestValidity = CheckTwoFactorTimeout(recentTextRequest);
+                    var textRequestValidity = CheckTwoFactorTimeout(recentTextRequest, throttleTimeout);
 
                     if (recentTextRequest != null && !textRequestValidity.Item1)
                     {
@@ -98,22 +93,22 @@ namespace DataOnion.Auth
                     break;
             }
 
-            var code = _generate2FACode.Invoke();
             var token = Guid.NewGuid();
+            var newRequest = new TwoFactorRequest
+            {
+                Did = did,
+                VerificationCode = code,
+                CreatedAt = DateTime.UtcNow,
+                Token = token,
+                Method = method
+            };
 
             await _redisContext.CreateTwoFactorRequestAsync(
                 userId, 
-                new TwoFactorRequest
-                {
-                    Did = did,
-                    VerificationCode = code,
-                    CreatedAt = DateTime.UtcNow,
-                    Token = token,
-                    Method = method
-                }
+                newRequest
             );
 
-            return token;
+            return newRequest;
         }
 
         public async Task<bool> VerifyDidAsync(
@@ -209,14 +204,13 @@ namespace DataOnion.Auth
         }
 
         // Checks the TwoFactorRequest's timestamp to see if it has passed the throttle timeout yet.
-        private (bool, int) CheckTwoFactorTimeout(TwoFactorRequest? existingRequest)
+        private (bool, int) CheckTwoFactorTimeout(TwoFactorRequest? existingRequest, int throttleTimeout)
         {
             if (existingRequest == null)
             {
                 return (false, 0);
             }
             
-            var throttleTimeout = _twoFactorThrottleTimeoutSeconds;
             var timeoutSpan = TimeSpan.FromSeconds(throttleTimeout);
             var createdAt = existingRequest.CreatedAt;
             var now = DateTime.UtcNow;
@@ -244,18 +238,24 @@ namespace DataOnion.Auth
         public string Did { get; private set; }
         public string Language { get; private set; }
         public VerificationMethod Method { get; private set; }
+        public int VerificationCode { get; private set; }
+        public int ThrottleTimeout { get; private set; }
 
         public RegisterDidParams(
             int userId,
             string did,
             string language,
-            VerificationMethod method
+            VerificationMethod method,
+            int verificationCode,
+            int throttleTimeout
         )
         {
             UserId = userId;
             Did = did;
             Language = language;
             Method = method;
+            VerificationCode = verificationCode;
+            ThrottleTimeout = throttleTimeout;
         }
     }
 
