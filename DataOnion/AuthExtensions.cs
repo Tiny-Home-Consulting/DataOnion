@@ -31,12 +31,10 @@ namespace DataOnion
 
     public interface IFluentTwoFactorAuthOnion
     {
-        IFluentAuthOnion ConfigureTwoFactorAuth<TDid, TUser>(
+        IFluentAuthOnion ConfigureTwoFactorAuth(
             string envPrefix,
             string twoFactorAuthPrefix
-        )
-            where TDid : DidBase, new()
-            where TUser : TwoFactorAuthUserBase, new();
+        );
     }
 
     public class FluentAuthOnion : IFluentAuthOnion
@@ -97,12 +95,10 @@ namespace DataOnion
             return this;
         }
 
-        public IFluentAuthOnion ConfigureTwoFactorAuth<TDid, TUser>(
+        public IFluentAuthOnion ConfigureTwoFactorAuth(
             string envPrefix,
             string twoFactorAuthPrefix
         )
-            where TDid : DidBase, new()
-            where TUser : TwoFactorAuthUserBase, new()
         {
             _serviceCollection.AddScoped<ITwoFactorRedisContext, TwoFactorRedisContext>( provider =>
                 new TwoFactorRedisContext(
@@ -112,7 +108,7 @@ namespace DataOnion
                     provider.GetService<ILogger<TwoFactorRedisContext>>()
                 )
             );
-            _serviceCollection.AddScoped<ITwoFactorAuthService<TDid, TUser>, TwoFactorAuthService<TDid, TUser>>();
+            _serviceCollection.AddScoped<ITwoFactorAuthService, TwoFactorAuthService>();
 
             return this;
         }
@@ -130,19 +126,5 @@ namespace DataOnion
                 environmentPrefix
             );
         }
-    }
-
-    public abstract class DidBase : IEntity<Guid>
-    {
-        public Guid Id { get; set; }
-        public string Number { get; set; }
-        public TwoFactorAuthUserBase User { get; set; }
-        public DateTime CreatedAt { get; set; }
-        public DateTime UpdatedAt { get; set; }
-    }
-
-    public abstract class TwoFactorAuthUserBase : IEntity<int>
-    {
-        public int Id { get; set; }
     }
 }

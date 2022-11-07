@@ -7,13 +7,13 @@ namespace DataOnion.Auth
 {
     public interface ITwoFactorRedisContext
     {
-        Task CreateTwoFactorRequestAsync(int cpcUserId, TwoFactorRequest request);
+        Task CreateTwoFactorRequestAsync(int userId, TwoFactorRequest request);
         Task<IEnumerable<TwoFactorRequest>> FetchTwoFactorRequestsAsync(
-            int cpcUserId,
+            int userId,
             VerificationMethod method
         );
         Task DeleteTwoFactorRequestsAsync(
-            int cpcUserId
+            int userId
         );
     }
 
@@ -47,12 +47,12 @@ namespace DataOnion.Auth
             _logger = logger;
         }
 
-        public async Task CreateTwoFactorRequestAsync(int cpcUserId, TwoFactorRequest request)
+        public async Task CreateTwoFactorRequestAsync(int userId, TwoFactorRequest request)
         {
             var keyPrefix = _twoFactorRequestPrefix;
             var method = request.Method;
             var redisKey = BuildTwoFactorKey(
-                cpcUserId,
+                userId,
                 method
             );
             var stringEnumConverter = new JsonStringEnumConverter();
@@ -71,11 +71,11 @@ namespace DataOnion.Auth
         }
 
         public async Task<IEnumerable<TwoFactorRequest>> FetchTwoFactorRequestsAsync(
-            int cpcUserId,
+            int userId,
             VerificationMethod method
         )
         {
-            var key = BuildTwoFactorKey(cpcUserId, method);
+            var key = BuildTwoFactorKey(userId, method);
 
             try
             {
@@ -101,7 +101,7 @@ namespace DataOnion.Auth
                 _logger?.LogError(
                     e, 
                     "Error deserializing a 2FA request for user {UserID}. This means most likely the JSON data stored is not valid. Key: {Key}", 
-                    cpcUserId,
+                    userId,
                     key.ToString()
                 );
 
@@ -112,7 +112,7 @@ namespace DataOnion.Auth
                 _logger?.LogError(
                     e,
                     "Unexpected error occurred trying to retrieve values in Redis for user {UserID}. Key: {Key}",
-                    cpcUserId,
+                    userId,
                     key.ToString()
                 );
 
@@ -145,12 +145,12 @@ namespace DataOnion.Auth
             }
         }
 
-        public async Task DeleteTwoFactorRequestsAsync(int cpcUserId)
+        public async Task DeleteTwoFactorRequestsAsync(int userId)
         {
             var keys = new RedisKey[]
             {
-                BuildTwoFactorKey(cpcUserId, VerificationMethod.Call),
-                BuildTwoFactorKey(cpcUserId, VerificationMethod.Text)
+                BuildTwoFactorKey(userId, VerificationMethod.Call),
+                BuildTwoFactorKey(userId, VerificationMethod.Text)
             };
 
             foreach (var key in keys)

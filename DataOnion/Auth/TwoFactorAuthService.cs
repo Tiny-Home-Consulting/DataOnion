@@ -1,44 +1,34 @@
-using DataOnion.db;
 using DataOnion.Models;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using System.Data.Common;
-using System.Net;
 
 namespace DataOnion.Auth
 {
-    public interface ITwoFactorAuthService<TDid, TUser>
-        where TDid : DidBase
-        where TUser : TwoFactorAuthUserBase
+    public interface ITwoFactorAuthService
     {
         Task<TwoFactorRequest> RegisterDidAsync(
             RegisterDidParams parameters
         );
 
-        Task<bool> VerifyDidAsync(
-            VerifyDidParams parameters
+        Task<TwoFactorRequest?> FetchRequestAsync(
+            FetchRequestParams parameters
+        );
+
+        Task DeleteRequestsAsync(
+            int userId
         );
     }
 
-    public class TwoFactorAuthService<TDid, TUser> : ITwoFactorAuthService<TDid, TUser>
-        where TDid : DidBase, new()
-        where TUser : TwoFactorAuthUserBase, new()
+    public class TwoFactorAuthService : ITwoFactorAuthService
     {
         private readonly ITwoFactorRedisContext _redisContext;
-        private readonly IDapperService<DbConnection> _dapper;
-        private readonly IEFCoreService<DbContext> _efCore;
         private readonly ILogger? _logger;
 
         public TwoFactorAuthService(
             ITwoFactorRedisContext redisContext,
-            IDapperService<DbConnection> dapper,
-            IEFCoreService<DbContext> efCore,
-            ILogger<TwoFactorAuthService<TDid, TUser>>? logger
+            ILogger<TwoFactorAuthService>? logger
         )
         {
             _redisContext = redisContext;
-            _efCore = efCore;
-            _dapper = dapper;
             _logger = logger;
         }
 
@@ -111,8 +101,8 @@ namespace DataOnion.Auth
             return newRequest;
         }
 
-        public async Task<bool> VerifyDidAsync(
-            VerifyDidParams parameters
+        public async Task<TwoFactorRequest?> FetchRequestAsync(
+            FetchRequestParams parameters
         )
         {
             var userId = parameters.UserId;
@@ -149,58 +139,16 @@ namespace DataOnion.Auth
                 }
             }
 
-            if (recentRequest != null)
-            {
-                if (token != recentRequest.Token)
-                {
-                    throw new EntityNotFoundException<TwoFactorRequest>();
-                }
+            return recentRequest;
+        }
 
-                var existingUser = await _efCore.FetchAsync<TUser, int>(userId);
-
-                if (existingUser == null)
-                {
-                    var newUser = new TUser()
-                    {
-                        Id = userId
-                    };
-
-                    existingUser = await _efCore.CreateAsync<TUser>(newUser);
-                }
-
-                var existingDid = await _efCore.FetchAsync<TDid>(d
-                    => d.Number == recentRequest.Did);
-
-                if (existingDid == null)
-                {
-                    await _efCore.CreateAsync(new TDid
-                    {
-                        Number = recentRequest.Did,
-                        User = existingUser
-                    });
-                }
-                else
-                {
-                    existingDid.User = existingUser;
-                    existingDid.UpdatedAt = DateTime.UtcNow;
-
-                    await _efCore.UpdateAsync(
-                        existingDid.Id,
-                        existingDid
-                    );
-                }
-
-                await _redisContext.DeleteTwoFactorRequestsAsync(
-                    userId
-                );
-
-                _logger?.LogInformation($"Verified did {recentRequest.Did} for CPC user {parameters.UserId}");
-            }
-
-            // If the code didn't match, recentRequest == null
-            // If the token didn't match, it'd throw an error before reaching here
-            // Therefore, verified = (recentRequest != null)
-            return recentRequest != null;
+        public async Task DeleteRequestsAsync(
+            int userId
+        )
+        {
+            await _redisContext.DeleteTwoFactorRequestsAsync(
+                userId
+            );
         }
 
         // Checks the TwoFactorRequest's timestamp to see if it has passed the throttle timeout yet.
@@ -259,14 +207,14 @@ namespace DataOnion.Auth
         }
     }
 
-    public class VerifyDidParams
+    public class FetchRequestParams
     {
         public Guid Token { get; private set; }
         public int Code { get; private set; }
         public int UserId { get; private set; }
         public VerificationMethod Method { get; private set; }
 
-        public VerifyDidParams(
+        public FetchRequestParams(
             Guid token,
             int code,
             int userId,
