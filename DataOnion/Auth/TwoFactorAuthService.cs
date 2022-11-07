@@ -1,11 +1,10 @@
-using DataOnion.Models;
 using Microsoft.Extensions.Logging;
 
 namespace DataOnion.Auth
 {
     public interface ITwoFactorAuthService
     {
-        Task<TwoFactorRequest> RegisterDidAsync(
+        Task<RegisterDidResult> RegisterDidAsync(
             RegisterDidParams parameters
         );
 
@@ -32,7 +31,7 @@ namespace DataOnion.Auth
             _logger = logger;
         }
 
-        public async Task<TwoFactorRequest> RegisterDidAsync(
+        public async Task<RegisterDidResult> RegisterDidAsync(
             RegisterDidParams parameters
         )
         {
@@ -41,6 +40,10 @@ namespace DataOnion.Auth
             var userId = parameters.UserId;
             var code = parameters.VerificationCode;
             var throttleTimeout = parameters.ThrottleTimeout;
+
+            bool tooManyRequests = false;
+            TwoFactorRequest? newRequest = null;
+            int timeoutRemaining = 0;
 
             switch (method)
             {
@@ -55,9 +58,8 @@ namespace DataOnion.Auth
 
                     if (recentCallRequest != null && !callRequestValidity.Item1)
                     {
-                        throw new TooManyRequestsException(
-                            callRequestValidity.Item2
-                        );
+                        tooManyRequests = true;
+                        timeoutRemaining = callRequestValidity.Item2;
                     }
                     break;
                 case VerificationMethod.Text:
@@ -71,9 +73,8 @@ namespace DataOnion.Auth
 
                     if (recentTextRequest != null && !textRequestValidity.Item1)
                     {
-                        throw new TooManyRequestsException(
-                            textRequestValidity.Item2
-                        );
+                        tooManyRequests = true;
+                        timeoutRemaining = textRequestValidity.Item2;
                     }
                     break;
                 // In the case that we ever add another form of 2FA I don't
@@ -83,22 +84,30 @@ namespace DataOnion.Auth
                     break;
             }
 
-            var token = Guid.NewGuid();
-            var newRequest = new TwoFactorRequest
+            if (!tooManyRequests)
             {
-                Did = did,
-                VerificationCode = code,
-                CreatedAt = DateTime.UtcNow,
-                Token = token,
-                Method = method
-            };
+                var token = Guid.NewGuid();
 
-            await _redisContext.CreateTwoFactorRequestAsync(
-                userId, 
-                newRequest
+                newRequest = new TwoFactorRequest
+                {
+                    Did = did,
+                    VerificationCode = code,
+                    CreatedAt = DateTime.UtcNow,
+                    Token = token,
+                    Method = method
+                };
+
+                await _redisContext.CreateTwoFactorRequestAsync(
+                    userId, 
+                    newRequest
+                );
+            }
+
+            return new RegisterDidResult(
+                tooManyRequests,
+                newRequest,
+                timeoutRemaining
             );
-
-            return newRequest;
         }
 
         public async Task<TwoFactorRequest?> FetchRequestAsync(
@@ -225,6 +234,24 @@ namespace DataOnion.Auth
             Code = code;
             UserId = userId;
             Method = method;
+        }
+    }
+
+    public class RegisterDidResult
+    {
+        public bool AreThereTooManyRequests;
+        public TwoFactorRequest? Request;
+        public int TimeoutRemaining;
+
+        public RegisterDidResult(
+            bool areThereTooManyRequests,
+            TwoFactorRequest? request,
+            int timeoutRemaining
+        )
+        {
+            AreThereTooManyRequests = areThereTooManyRequests;
+            Request = request;
+            TimeoutRemaining = timeoutRemaining;
         }
     }
 

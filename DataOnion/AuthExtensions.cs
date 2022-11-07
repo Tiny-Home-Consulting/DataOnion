@@ -1,6 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
 using DataOnion.Auth;
-using DataOnion.db;
 using StackExchange.Redis;
 using Microsoft.Extensions.Logging;
 
