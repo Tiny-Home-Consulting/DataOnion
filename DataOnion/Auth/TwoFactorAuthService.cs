@@ -13,7 +13,7 @@ namespace DataOnion.Auth
         );
 
         Task DeleteRequestsAsync(
-            int userId
+            string userId
         );
     }
 
@@ -152,7 +152,7 @@ namespace DataOnion.Auth
         }
 
         public async Task DeleteRequestsAsync(
-            int userId
+            string userId
         )
         {
             await _redisContext.DeleteTwoFactorRequestsAsync(
@@ -191,7 +191,7 @@ namespace DataOnion.Auth
 
     public class RegisterDidParams
     {
-        public int UserId { get; private set; }
+        public string UserId { get; private set; }
         public string Did { get; private set; }
         public string Language { get; private set; }
         public VerificationMethod Method { get; private set; }
@@ -199,7 +199,7 @@ namespace DataOnion.Auth
         public int ThrottleTimeout { get; private set; }
 
         public RegisterDidParams(
-            int userId,
+            string userId,
             string did,
             string language,
             VerificationMethod method,
@@ -220,13 +220,13 @@ namespace DataOnion.Auth
     {
         public Guid Token { get; private set; }
         public int Code { get; private set; }
-        public int UserId { get; private set; }
+        public string UserId { get; private set; }
         public VerificationMethod Method { get; private set; }
 
         public FetchRequestParams(
             Guid token,
             int code,
-            int userId,
+            string userId,
             VerificationMethod method
         )
         {

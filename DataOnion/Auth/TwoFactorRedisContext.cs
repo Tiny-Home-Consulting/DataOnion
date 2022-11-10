@@ -7,13 +7,13 @@ namespace DataOnion.Auth
 {
     public interface ITwoFactorRedisContext
     {
-        Task CreateTwoFactorRequestAsync(int userId, TwoFactorRequest request);
+        Task CreateTwoFactorRequestAsync(string userId, TwoFactorRequest request);
         Task<IEnumerable<TwoFactorRequest>> FetchTwoFactorRequestsAsync(
-            int userId,
+            string userId,
             VerificationMethod method
         );
         Task DeleteTwoFactorRequestsAsync(
-            int userId
+            string userId
         );
     }
 
@@ -47,7 +47,7 @@ namespace DataOnion.Auth
             _logger = logger;
         }
 
-        public async Task CreateTwoFactorRequestAsync(int userId, TwoFactorRequest request)
+        public async Task CreateTwoFactorRequestAsync(string userId, TwoFactorRequest request)
         {
             var keyPrefix = _twoFactorRequestPrefix;
             var method = request.Method;
@@ -71,7 +71,7 @@ namespace DataOnion.Auth
         }
 
         public async Task<IEnumerable<TwoFactorRequest>> FetchTwoFactorRequestsAsync(
-            int userId,
+            string userId,
             VerificationMethod method
         )
         {
@@ -145,7 +145,7 @@ namespace DataOnion.Auth
             }
         }
 
-        public async Task DeleteTwoFactorRequestsAsync(int userId)
+        public async Task DeleteTwoFactorRequestsAsync(string userId)
         {
             var keys = new RedisKey[]
             {
@@ -160,7 +160,7 @@ namespace DataOnion.Auth
         }
 
         private RedisKey BuildTwoFactorKey(
-            int userId,
+            string userId,
             VerificationMethod method
         )
         {
