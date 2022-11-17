@@ -117,7 +117,6 @@ namespace DataOnion.Auth
             var userId = parameters.UserId;
             var code = parameters.Code;
             var method = parameters.Method;
-            var token = parameters.Token;
 
             TwoFactorRequest? recentRequest = null;
 
@@ -218,19 +217,16 @@ namespace DataOnion.Auth
 
     public class FetchRequestParams
     {
-        public Guid Token { get; private set; }
         public int Code { get; private set; }
         public string UserId { get; private set; }
         public VerificationMethod Method { get; private set; }
 
         public FetchRequestParams(
-            Guid token,
             int code,
             string userId,
             VerificationMethod method
         )
         {
-            Token = token;
             Code = code;
             UserId = userId;
             Method = method;
