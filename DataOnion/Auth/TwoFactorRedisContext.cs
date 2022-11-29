@@ -92,7 +92,7 @@ namespace DataOnion.Auth
                         val, 
                         serializationOptions
                     )
-                );
+                ).OfType<TwoFactorRequest>();
 
                 return requests;
             } 
