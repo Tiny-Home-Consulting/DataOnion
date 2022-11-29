@@ -31,7 +31,6 @@ namespace DataOnion
     public interface IFluentTwoFactorAuthOnion
     {
         IFluentAuthOnion ConfigureTwoFactorAuth(
-            string envPrefix,
             string twoFactorAuthPrefix
         );
     }
@@ -95,15 +94,14 @@ namespace DataOnion
         }
 
         public IFluentAuthOnion ConfigureTwoFactorAuth(
-            string envPrefix,
             string twoFactorAuthPrefix
         )
         {
             _serviceCollection.AddScoped<ITwoFactorRedisContext, TwoFactorRedisContext>( provider =>
                 new TwoFactorRedisContext(
-                    envPrefix,
+                    _environmentPrefix,
                     twoFactorAuthPrefix,
-                    provider.GetService<IRedisManager>(),
+                    provider.GetRequiredService<IRedisManager>(),
                     provider.GetService<ILogger<TwoFactorRedisContext>>()
                 )
             );

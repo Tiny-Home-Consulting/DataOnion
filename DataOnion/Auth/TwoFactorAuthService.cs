@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.Logging;
 
 namespace DataOnion.Auth
@@ -24,7 +25,7 @@ namespace DataOnion.Auth
 
         public TwoFactorAuthService(
             ITwoFactorRedisContext redisContext,
-            ILogger<TwoFactorAuthService>? logger
+            ILogger<TwoFactorAuthService>? logger = null
         )
         {
             _redisContext = redisContext;
@@ -192,7 +193,6 @@ namespace DataOnion.Auth
     {
         public string UserId { get; private set; }
         public string Did { get; private set; }
-        public string Language { get; private set; }
         public VerificationMethod Method { get; private set; }
         public int VerificationCode { get; private set; }
         public int ThrottleTimeout { get; private set; }
@@ -200,7 +200,6 @@ namespace DataOnion.Auth
         public RegisterDidParams(
             string userId,
             string did,
-            string language,
             VerificationMethod method,
             int verificationCode,
             int throttleTimeout
@@ -208,7 +207,6 @@ namespace DataOnion.Auth
         {
             UserId = userId;
             Did = did;
-            Language = language;
             Method = method;
             VerificationCode = verificationCode;
             ThrottleTimeout = throttleTimeout;
@@ -235,9 +233,10 @@ namespace DataOnion.Auth
 
     public class RegisterDidResult
     {
-        public bool AreThereTooManyRequests;
-        public TwoFactorRequest? Request;
-        public int TimeoutRemaining;
+        [MemberNotNullWhen(false, nameof(Request))]
+        public bool AreThereTooManyRequests { get; private set; }
+        public TwoFactorRequest? Request { get; private set; }
+        public int TimeoutRemaining { get; private set; }
 
         public RegisterDidResult(
             bool areThereTooManyRequests,

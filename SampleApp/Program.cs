@@ -26,7 +26,6 @@ services.AddAuthOnion(environment)
     )
     .ConfigureRedis(redisConnectionString)
     .ConfigureTwoFactorAuth(
-        environment,
         twoFactorAuthPrefix
     );
 
