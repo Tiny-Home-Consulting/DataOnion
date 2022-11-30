@@ -97,7 +97,7 @@ namespace DataOnion
             string twoFactorAuthPrefix
         )
         {
-            _serviceCollection.AddScoped<ITwoFactorRedisContext>( provider =>
+            _serviceCollection.AddScoped<ITwoFactorRedisContext>(provider =>
                 new TwoFactorRedisContext(
                     _environmentPrefix,
                     twoFactorAuthPrefix,

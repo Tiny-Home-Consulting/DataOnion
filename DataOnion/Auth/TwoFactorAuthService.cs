@@ -252,7 +252,6 @@ namespace DataOnion.Auth
 
     public enum VerificationMethod
     {
-        Unknown,
         Call,
         Text
     }
