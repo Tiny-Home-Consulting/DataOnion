@@ -11,6 +11,7 @@ var dbConnectionString = "";
 var redisConnectionString = "";
 var environment = "DEV";
 var authPrefix = "usersession";
+var twoFactorAuthPrefix = "2FA";
 
 services.AddDatabaseOnion(dbConnectionString)
     .ConfigureDapper<NpgsqlConnection>(str => new NpgsqlConnection(str))
@@ -23,7 +24,10 @@ services.AddAuthOnion(environment)
         authPrefix,
         hash => new LoginData(hash)
     )
-    .ConfigureRedis(redisConnectionString);
+    .ConfigureRedis(redisConnectionString)
+    .ConfigureTwoFactorAuth(
+        twoFactorAuthPrefix
+    );
 
 
 // Add services to the container.
