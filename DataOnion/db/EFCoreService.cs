@@ -8,6 +8,8 @@ namespace DataOnion.db
     {
         private readonly TDbContext _context;
 
+        public TDbContext DbContext => _context;
+
         public EFCoreService(
             TDbContext context
         )
