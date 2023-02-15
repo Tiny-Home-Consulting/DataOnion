@@ -9,6 +9,7 @@ namespace DataOnion.db
 
     public interface IEFCoreService<TDbContext>
     {
+        TDbContext DbContext { get; }
         // crud
         Task<TEntity> CreateAsync<TEntity>(
             TEntity entity
