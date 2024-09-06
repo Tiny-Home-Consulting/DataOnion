@@ -82,6 +82,21 @@ namespace DataOnion.Auth
 
         private RedisKey BuildKey(string id) => new($"{_config.EnvironmentPrefix}_{_config.AuthPrefix}_{id}");
 
+        private async Task CreateSessionAsync(RedisKey id, T userSession)
+        {
+            await _database.HashSetAsync(
+                id,
+                userSession
+                    .ToRedisHash()
+                    .Append(new HashEntry(
+                        _config.ExpirationKey,
+                        _expirationTime.ToUnixTimeSeconds().ToString()
+                    ))
+                    .ToArray()
+            );
+            await _database.KeyExpireAsync(id, _config.AbsoluteExpiration);
+        }
+
         public async Task<T?> LoginAsync(T userSession)
         {
             var id = BuildKey(userSession.GetId());
@@ -98,17 +113,7 @@ namespace DataOnion.Auth
                     "Session does not exist, creating hash in Redis at '{0}'",
                     id
                 );
-                await _database.HashSetAsync(
-                    id,
-                    userSession
-                        .ToRedisHash()
-                        .Append(new HashEntry(
-                            _config.ExpirationKey,
-                            _expirationTime.ToUnixTimeSeconds().ToString()
-                        ))
-                        .ToArray()
-                );
-                await _database.KeyExpireAsync(id, _config.AbsoluteExpiration);
+                await CreateSessionAsync(id, userSession);
                 return userSession;
             }
             else
@@ -118,7 +123,34 @@ namespace DataOnion.Auth
                     id
                 );
 
-                var session = _config.ConstructFromHash(redisHash);
+                T session;
+                try
+                {
+                    session = _config.ConstructFromHash(redisHash);
+                }
+                catch (Exception e)
+                {
+                    _logger?.LogWarning(
+                        "Redis item with id '{0}' cannot be deserialized; deleting and recreating it. Error message: {1}",
+                        id,
+                        e
+                    );
+                    try
+                    {
+                        await _database.KeyDeleteAsync(id);
+                        await CreateSessionAsync(id, userSession);
+                        return userSession;
+                    }
+                    catch (RedisException re)
+                    {
+                        _logger?.LogError(
+                            re,
+                            "Unexpected Redis error, see exception message for details"
+                        );
+                        throw;
+                    }
+                }
+
                 if (userSession.Equals(session))
                 {
                     _logger?.LogDebug(
@@ -203,7 +235,21 @@ namespace DataOnion.Auth
             {
                 await SetExpirationAsync(redisKey);
                 var fullRedisHash = await _database.HashGetAllAsync(redisKey);
-                return _config.ConstructFromHash(fullRedisHash);
+                
+                try
+                {
+                    return _config.ConstructFromHash(fullRedisHash);
+                }
+                catch (Exception e)
+                {
+                    _logger?.LogWarning(
+                        "Redis item with id '{0}' cannot be deserialized; deleting it. Error message: {1}",
+                        id,
+                        e
+                    );
+                    await _database.KeyDeleteAsync(redisKey);
+                    return null;
+                }
             }
             catch (RedisException e)
             {
